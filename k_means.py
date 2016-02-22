@@ -1,14 +1,15 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.spatial.distance import euclidean
 import dataloader_1b, random
 
+K = 3
 FIRST_K_POINTS = 1
 UNIFORMLY_K_POINTS = 2
 K_MEANS_PLUS_PLUS = 3
 GONZALES_ALGORITHM = 4
+DATA_SET_FILE = "data1b/C2.txt"
 
-c2 = dataloader_1b.load_data_1b("data1b/C2.txt")
-# print c2
 
 # return the index of the nearest point of p
 def find_nearest_point(points, p):
@@ -24,12 +25,12 @@ def find_nearest_point(points, p):
     
     return minimal_distance_point_index, minimal_distance
 
+
 def k_means(points, k, initialization_method):
     if k <= 0 or len(points) <= k:
         return False
     # initialize k centers with zeroes
-    k_centers = np.zeros((k, 2), dtype = np.float64)
-    k_clusters = np.zeros(len(points), dtype = np.float64)
+    k_centers = np.zeros((k, len(points[0])), dtype = np.float64)
     
     # initialization
     if initialization_method == FIRST_K_POINTS:
@@ -41,14 +42,15 @@ def k_means(points, k, initialization_method):
         print "UNIFORMLY_K_POINTS"
         
         random_array = np.zeros(len(points), dtype = np.int)
-        for i in range(0, random_array.size - 1):
+        for i in range(random_array.size - 1):
             random_array[i + 1] =  random_array[i] + 1
-        for i in range(0, random_array.size - 1):
-            j = random.randint(1, 10)
+            
+        for i in range(random_array.size):
+            j = random.randint(0, random_array.size - 1)
             e = random_array[i]
             random_array[i] = random_array[j]
             random_array[j] = e
-        
+                
         for i in range(len(k_centers)):
             k_centers[i] = points[random_array[i]]
                 
@@ -64,7 +66,7 @@ def k_means(points, k, initialization_method):
         
         for r in range(1, len(k_centers)):
             for i in range(len(points)):
-                nearest_point_index, nearest_distance = find_nearest_point(k_centers[0: r], points[i])
+                nearest_center_index, nearest_distance = find_nearest_point(k_centers[0: r], points[i])
                 distribution[i] = nearest_distance ** 2
             
             # normalization distribution
@@ -83,15 +85,69 @@ def k_means(points, k, initialization_method):
                 if random_number <= accumulate_distribution[i] and accumulate_distribution[i] != 0:
                     k_centers[r] = points[i]
                     break
-        print k_centers
+    
     elif initialization_method == GONZALES_ALGORITHM:
-        pass
+        print "GONZALES_ALGORITHM"
+        
+        c0_index = random.randint(0, len(points) - 1)
+        k_centers[0] = points[c0_index]
+        
+        for t in range(1, len(k_centers)):
+            
+            t_th_center_index, cost_function = find_nearest_point(k_centers[0: t], points[0])
+            
+            for i in range(1, len(points)):
+                nearest_center_index, nearest_distance = find_nearest_point(k_centers[0: t], points[i])
+                                
+                if nearest_distance > cost_function:
+                    t_th_center_index = i
+                    cost_function = nearest_distance
+             
+            k_centers[t] = points[t_th_center_index]
+        
     else:
         return False
-    
-    
+        
     # clustering
+    # initialize k clusters, i.e., label array
+    k_clusters = np.zeros(len(points), dtype = np.int)
+    while True:
+        # assignment
+        for i in range(len(points)):
+            nearest_center_index, nearest_distance = find_nearest_point(k_centers, points[i])
+            k_clusters[i] = nearest_center_index
+        
+        # update
+        new_k_centers = np.zeros((len(k_centers), len(points[0])), dtype = np.float64)
+        sums = np.zeros((len(k_centers), len(points[0])), dtype = np.float64)
+        counts = np.zeros(len(k_centers), dtype = np.int)
+        for i in range(len(k_clusters)):
+            sums[k_clusters[i]] = np.add(sums[k_clusters[i]], points[i])
+            counts[k_clusters[i]] += 1
+        for i in range(len(new_k_centers)):
+            for j in range(len(points[0])):
+                new_k_centers[i][j] = sums[i][j] / counts[i]
+        
+        if np.linalg.norm(new_k_centers - k_centers) <= 10.0 ** (-6):
+            break
+        else:
+            k_centers = new_k_centers
     
+    return k_centers, k_clusters
 
 if __name__ == "__main__":
-    k_means(c2, 3, K_MEANS_PLUS_PLUS)
+    print "k:", K
+    
+    points = dataloader_1b.load_data_1b(DATA_SET_FILE)
+    k_centers, points_labels = k_means(points, K, K_MEANS_PLUS_PLUS)
+        
+    points_x = [p[0] for p in points]
+    points_y = [p[1] for p in points]
+    
+    k_centers_x = [c[0] for c in k_centers]
+    k_centers_y = [c[1] for c in k_centers]
+    
+    # plt.plot(points_x, points_y, ".", k_centers_x, k_centers_y, "r^")
+    plt.scatter(points_x, points_y, c = points_labels)
+    plt.ylim([min(points_x), max(points_y)])
+    plt.show()
