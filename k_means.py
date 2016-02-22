@@ -3,12 +3,19 @@ import matplotlib.pyplot as plt
 from scipy.spatial.distance import euclidean
 import dataloader_1b, random
 
+# number of clusters
 K = 3
+# initialization methods
 FIRST_K_POINTS = 1
 UNIFORMLY_K_POINTS = 2
 K_MEANS_PLUS_PLUS = 3
 GONZALES_ALGORITHM = 4
+# data set file name
 DATA_SET_FILE = "data1b/C2.txt"
+# clusters colors
+CATEGORY10 = np.array([ [31, 119, 180], [255, 127, 14], [44, 160, 44], [214, 39, 40],
+                        [148, 103, 189], [140, 86, 75], [227, 119, 194], [127, 127, 127],
+                        [188, 189, 34], [23, 190, 207] ])
 
 
 # return the index of the nearest point of p
@@ -24,6 +31,15 @@ def find_nearest_point(points, p):
             minimal_distance_point_index = i
     
     return minimal_distance_point_index, minimal_distance
+
+
+# compute k-means cost function
+def k_means_cost_function(points, k_centers, points_labels):
+    cost_function = 0.0
+    for i in range(len(points)):
+        cost_function += euclidean(points[i], k_centers[points_labels[i]])
+        
+    return cost_function
 
 
 def k_means(points, k, initialization_method):
@@ -107,15 +123,19 @@ def k_means(points, k, initialization_method):
         
     else:
         return False
-        
+          
     # clustering
     # initialize k clusters, i.e., label array
     k_clusters = np.zeros(len(points), dtype = np.int)
+    k_means_cost_function_values = []
     while True:
         # assignment
         for i in range(len(points)):
             nearest_center_index, nearest_distance = find_nearest_point(k_centers, points[i])
             k_clusters[i] = nearest_center_index
+        
+        # compute k-means cost functions
+        k_means_cost_function_values.append(k_means_cost_function(points, k_centers, k_clusters))
         
         # update
         new_k_centers = np.zeros((len(k_centers), len(points[0])), dtype = np.float64)
@@ -127,20 +147,20 @@ def k_means(points, k, initialization_method):
         for i in range(len(new_k_centers)):
             for j in range(len(points[0])):
                 new_k_centers[i][j] = sums[i][j] / counts[i]
-        
-        if np.linalg.norm(new_k_centers - k_centers) <= 10.0 ** (-6):
+                
+        if np.linalg.norm(np.linalg.norm(new_k_centers - k_centers, axis = 1)) <= 10.0 ** (-10):
             break
         else:
             k_centers = new_k_centers
     
-    return k_centers, k_clusters
+    return k_centers, k_clusters, k_means_cost_function_values
 
 if __name__ == "__main__":
     print "k:", K
     
     points = dataloader_1b.load_data_1b(DATA_SET_FILE)
-    k_centers, points_labels = k_means(points, K, K_MEANS_PLUS_PLUS)
-        
+    k_centers, points_labels, k_means_cost_function_values = k_means(points, K, K_MEANS_PLUS_PLUS)
+    
     points_x = [p[0] for p in points]
     points_y = [p[1] for p in points]
     
@@ -148,6 +168,6 @@ if __name__ == "__main__":
     k_centers_y = [c[1] for c in k_centers]
     
     # plt.plot(points_x, points_y, ".", k_centers_x, k_centers_y, "r^")
-    plt.scatter(points_x, points_y, c = points_labels)
+    plt.scatter(points_x, points_y, c = [CATEGORY10[label] / 255.0 for label in points_labels], alpha = 0.8)
     plt.ylim([min(points_x), max(points_y)])
     plt.show()
