@@ -4,7 +4,7 @@ from scipy.spatial.distance import euclidean
 import dataloader_1b, random
 
 # number of clusters
-K = 3
+K = 4
 # initialization methods
 FIRST_K_POINTS = 1
 UNIFORMLY_K_POINTS = 2
@@ -34,15 +34,15 @@ def find_nearest_point(points, p):
 
 
 # compute k-means cost function
-def k_means_cost_function(points, k_centers, points_labels):
+def k_medians_cost_function(points, k_centers, points_labels):
     cost_function = 0.0
     for i in range(len(points)):
-        cost_function += euclidean(points[i], k_centers[points_labels[i]]) ** 2
+        cost_function += euclidean(points[i], k_centers[points_labels[i]])
         
     return cost_function
 
 
-def k_means(points, k, initialization_method):
+def k_medians(points, k, initialization_method):
     if k <= 0 or len(points) <= k:
         return False
     # initialize k centers with zeroes
@@ -127,7 +127,7 @@ def k_means(points, k, initialization_method):
     # clustering
     # initialize k clusters, i.e., label array
     points_labels = np.zeros(len(points), dtype = np.int)
-    k_means_cost_function_values = []
+    k_medians_cost_function_values = []
     while True:
         # assignment
         for i in range(len(points)):
@@ -135,33 +135,35 @@ def k_means(points, k, initialization_method):
             points_labels[i] = nearest_center_index
         
         # compute k-means cost functions
-        k_means_cost_function_values.append(k_means_cost_function(points, k_centers, points_labels))
+        k_medians_cost_function_values.append(k_medians_cost_function(points, k_centers, points_labels))
         
         # update
         new_k_centers = np.zeros((len(k_centers), len(points[0])), dtype = np.float64)
-        sums = np.zeros((len(k_centers), len(points[0])), dtype = np.float64)
-        counts = np.zeros(len(k_centers), dtype = np.int)
-        for i in range(len(points_labels)):
-            sums[points_labels[i]] = np.add(sums[points_labels[i]], points[i])
-            counts[points_labels[i]] += 1
+        # compute k-medians instead of k-means of each cluster
+        k_clusters = [[] for i in range(len(new_k_centers))]
+        for j in range(len(points_labels)):
+            k_clusters[points_labels[j]].append(points[j])
+        
+        # for i in range(len(new_k_centers)):
+            # new_k_centers[i] = np.sum(np.array(k_clusters[i]), axis = 0) / len(k_clusters[i])
+        
         for i in range(len(new_k_centers)):
-            for j in range(len(points[0])):
-                new_k_centers[i][j] = sums[i][j] / counts[i]
-                
+            new_k_centers[i] = np.median(np.array(k_clusters[i]), axis = 0)
+              
         if np.linalg.norm(np.linalg.norm(new_k_centers - k_centers, axis = 1)) <= 10.0 ** (-10):
             break
         else:
             k_centers = new_k_centers
     
-    return k_centers, points_labels, k_means_cost_function_values
+    return k_centers, points_labels, k_medians_cost_function_values
 
 if __name__ == "__main__":
     print "k:", K
     
     points = dataloader_1b.load_data_1b(DATA_SET_FILE)
-    k_centers, points_labels, k_means_cost_function_values = k_means(points, K, K_MEANS_PLUS_PLUS)
+    k_centers, points_labels, k_medians_cost_function_values = k_medians(points, K, K_MEANS_PLUS_PLUS)
     
-    print k_means_cost_function_values
+    print "Cost function:", k_medians_cost_function_values
     
     points_x = [p[0] for p in points]
     points_y = [p[1] for p in points]
