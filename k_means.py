@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 from scipy.spatial.distance import euclidean
 import dataloader_1b, random
 
-# number of clusters
-K = 3
 # initialization methods
 FIRST_K_POINTS = 1
 UNIFORMLY_K_POINTS = 2
@@ -15,7 +13,7 @@ DATA_SET_FILE = "data1b/C2.txt"
 # clusters colors
 CATEGORY10 = np.array([ [31, 119, 180], [255, 127, 14], [44, 160, 44], [214, 39, 40],
                         [148, 103, 189], [140, 86, 75], [227, 119, 194], [127, 127, 127],
-                        [188, 189, 34], [23, 190, 207] ])
+                        [188, 189, 34], [23, 190, 207] ]) / 255.0
 
 
 # return the index of the nearest point of p
@@ -24,7 +22,7 @@ def find_nearest_point(points, p):
     minimal_distance = euclidean(p, points[0])
     minimal_distance_point_index = 0
     
-    for i in range(len(points)):
+    for i in range(1, len(points)):
         distance = euclidean(p, points[i])
         if distance < minimal_distance:
             minimal_distance = distance
@@ -156,6 +154,8 @@ def k_means(points, k, initialization_method):
     return k_centers, points_labels, k_means_cost_function_values
 
 if __name__ == "__main__":
+    # number of clusters
+    K = 4
     print "k:", K
     
     points = dataloader_1b.load_data_1b(DATA_SET_FILE)
@@ -169,7 +169,15 @@ if __name__ == "__main__":
     k_centers_x = [c[0] for c in k_centers]
     k_centers_y = [c[1] for c in k_centers]
     
-    # plt.plot(points_x, points_y, ".", k_centers_x, k_centers_y, "r^")
-    plt.scatter(points_x, points_y, c = [CATEGORY10[label] / 255.0 for label in points_labels], alpha = 0.8)
-    plt.ylim([min(points_x), max(points_y) + 5])
+    fig, (subplot1, subplot2) = plt.subplots(1, 2)
+    subplot1.scatter(points_x, points_y, c = [CATEGORY10[label] for label in points_labels], alpha = 0.8, label = "clusters")
+    subplot1.scatter(k_centers_x, k_centers_y, marker = "+", label = "centers")
+    subplot1.set_ylim([min(points_x), max(points_y) + 5])
+    subplot1.set_title("Clusters")
+    subplot1.legend(loc = "upper right")
+    
+    subplot2.plot(k_means_cost_function_values)
+    subplot2.set_title("Cost function with k-means++ initialization")
+    subplot2.set_xlabel("Number of iterations")
+    subplot2.set_ylabel("Cost function")
     plt.show()

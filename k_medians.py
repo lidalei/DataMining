@@ -139,16 +139,17 @@ def k_medians(points, k, initialization_method):
         
         # update
         new_k_centers = np.zeros((len(k_centers), len(points[0])), dtype = np.float64)
-        # compute k-medians instead of k-means of each cluster
         k_clusters = [[] for i in range(len(new_k_centers))]
         for j in range(len(points_labels)):
             k_clusters[points_labels[j]].append(points[j])
         
+        # compute k-medians instead of k-means of each cluster
+        # k-means
         # for i in range(len(new_k_centers)):
-            # new_k_centers[i] = np.sum(np.array(k_clusters[i]), axis = 0) / len(k_clusters[i])
-        
+        #    new_k_centers[i] = np.mean(np.array(k_clusters[i]), axis = 0)
+        # k-meidnas
         for i in range(len(new_k_centers)):
-            new_k_centers[i] = np.median(np.array(k_clusters[i]), axis = 0)
+           new_k_centers[i] = np.median(np.array(k_clusters[i]), axis = 0)
               
         if np.linalg.norm(np.linalg.norm(new_k_centers - k_centers, axis = 1)) <= 10.0 ** (-10):
             break
