@@ -48,13 +48,9 @@ def k_means(points, k, initialization_method):
     
     # initialization
     if initialization_method == FIRST_K_POINTS:
-        print "FIRST_K_POINTS"
-        
         k_centers = points[0:k]
     
-    elif initialization_method == UNIFORMLY_K_POINTS:
-        print "UNIFORMLY_K_POINTS"
-        
+    elif initialization_method == UNIFORMLY_K_POINTS:        
         random_array = np.zeros(len(points), dtype = np.int)
         for i in range(random_array.size - 1):
             random_array[i + 1] =  random_array[i] + 1
@@ -68,9 +64,7 @@ def k_means(points, k, initialization_method):
         for i in range(len(k_centers)):
             k_centers[i] = points[random_array[i]]
                 
-    elif initialization_method == K_MEANS_PLUS_PLUS:
-        print "K_MEANS_PLUS_PLUS"
-        
+    elif initialization_method == K_MEANS_PLUS_PLUS:        
         c0_index = random.randint(0, len(points) - 1)
         k_centers[0] = points[c0_index]
         
@@ -97,9 +91,7 @@ def k_means(points, k, initialization_method):
                     k_centers[r] = points[i]
                     break
     
-    elif initialization_method == GONZALES_ALGORITHM:
-        print "GONZALES_ALGORITHM"
-        
+    elif initialization_method == GONZALES_ALGORITHM:        
         # c0_index = random.randint(0, len(points) - 1)
         # k_centers[0] = points[c0_index]
         k_centers[0] = points[0]
@@ -141,8 +133,7 @@ def k_means(points, k, initialization_method):
             sums[points_labels[i]] = np.add(sums[points_labels[i]], points[i])
             counts[points_labels[i]] += 1
         for i in range(len(new_k_centers)):
-            for j in range(len(points[0])):
-                new_k_centers[i][j] = sums[i][j] / counts[i]
+            new_k_centers[i] = sums[i] / counts[i]
             
         if np.linalg.norm(np.linalg.norm(new_k_centers - k_centers, axis = 1)) <= 10.0 ** (-10):
             k_centers = new_k_centers
@@ -165,6 +156,7 @@ if __name__ == "__main__":
         costs_different_initializations = {}
         
         ## initialize with first k points in the data-set
+        print "FIRST_K_POINTS"
         k_centers, points_labels, k_means_cost_function_values = k_means(points, k, FIRST_K_POINTS)
         costs_different_initializations["FIRST_K_POINTS"] = k_means_cost_function_values
         
@@ -186,6 +178,7 @@ if __name__ == "__main__":
         axis_cost.set_ylabel("Cost function")
         
         ## initialize with k points uniformly picked at random
+        print "UNIFORMLY_K_POINTS"
         costs_different_initializations["UNIFORMLY_K_POINTS"] = []
         k_centers, points_labels, k_means_cost_function_values = None, None, None
         for i in range(5):
@@ -218,6 +211,7 @@ if __name__ == "__main__":
         axis_cost.set_ylabel("Cost function")
             
         ## initialize with k-means++
+        print "K_MEANS_PLUS_PLUS"
         costs_different_initializations["K_MEANS_PLUS_PLUS"] = []
         k_centers, points_labels, k_means_cost_function_values = None, None, None
         for i in range(5):
@@ -248,6 +242,7 @@ if __name__ == "__main__":
         axis_cost.set_ylabel("Cost function")
         
         ## initialize with GONZALES' algorithm
+        print "GONZALES_ALGORITHM"
         k_centers, points_labels, k_means_cost_function_values = k_means(points, k, GONZALES_ALGORITHM)
         costs_different_initializations["GONZALES_ALGORITHM"] = k_means_cost_function_values
         
