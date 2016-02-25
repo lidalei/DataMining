@@ -152,7 +152,7 @@ if __name__ == "__main__":
     points_y = [p[1] for p in points]
         
     # number of clusters
-    for k in [3]:
+    for k in [3, 4, 5]:
         print "k:", k
         
         costs_different_initializations = {}
@@ -167,23 +167,23 @@ if __name__ == "__main__":
         k_centers_x = [c[0] for c in k_centers]
         k_centers_y = [c[1] for c in k_centers]
         
-        fig1, (axis_clusters, axis_cost) = plt.subplots(1, 2)
-        axis_clusters.scatter(points_x, points_y, c = [CATEGORY10[label] for label in points_labels], alpha = 0.8, label = "clusters")
-        axis_clusters.scatter(k_centers_x, k_centers_y, marker = "+", label = "centers")
-        axis_clusters.set_ylim([min(points_x), max(points_y) + 5])
-        axis_clusters.set_title("Clusters with first " + str(k) + " points initialization")
-        axis_clusters.legend(loc = "upper right", fontsize = "medium")
+        fig1, (axes_clusters, axes_cost) = plt.subplots(1, 2)
+        axes_clusters.scatter(points_x, points_y, c = [CATEGORY10[label] for label in points_labels], alpha = 0.8, label = "clusters")
+        axes_clusters.scatter(k_centers_x, k_centers_y, marker = "+", label = "centers")
+        axes_clusters.set_ylim([min(points_x), max(points_y) + 5])
+        axes_clusters.set_title("Clusters with first " + str(k) + " points initialization")
+        axes_clusters.legend(loc = "upper right", fontsize = "medium")
         
-        axis_cost.plot(k_means_cost_function_values)
-        axis_cost.set_title("Cost function with first " + str(k) + " points initialization")
-        axis_cost.set_xlabel("Number of iterations")
-        axis_cost.set_ylabel("Cost function")
+        axes_cost.plot(k_means_cost_function_values)
+        axes_cost.set_title("Cost function with first " + str(k) + " points initialization")
+        axes_cost.set_xlabel("Number of iterations")
+        axes_cost.set_ylabel("Cost function")
         
         ## initialize with k points uniformly picked at random
         print "UNIFORMLY_K_POINTS"
         
-        fig2, axises = plt.subplots(3, 2)
-        axises = np.reshape(axises, axises.size)
+        fig2, axeses = plt.subplots(3, 2)
+        axeses = np.reshape(axeses, axeses.size)
         fig2.suptitle("Clusters and cost function with uniformly picked " + str(k) + " points initialization", fontsize = "x-large")
         
         costs_different_initializations["UNIFORMLY_K_POINTS"] = []
@@ -198,27 +198,27 @@ if __name__ == "__main__":
             
             k_centers_x = [c[0] for c in k_centers]
             k_centers_y = [c[1] for c in k_centers]
-            axises[i].scatter(points_x, points_y, c = [CATEGORY10[label] for label in points_labels], alpha = 0.8, label = "clusters")
-            axises[i].scatter(k_centers_x, k_centers_y, marker = "+", label = "centers")
-            axises[i].set_ylim([min(points_x), max(points_y) + 5])
-            axises[i].set_title("Run " + str(i + 1), fontsize = "medium")
-            axises[i].legend(loc = "upper right", fontsize = "small")
+            axeses[i].scatter(points_x, points_y, c = [CATEGORY10[label] for label in points_labels], alpha = 0.8, label = "clusters")
+            axeses[i].scatter(k_centers_x, k_centers_y, marker = "+", label = "centers")
+            axeses[i].set_ylim([min(points_x), max(points_y) + 5])
+            axeses[i].set_title("Run " + str(i + 1), fontsize = "medium")
+            axeses[i].legend(loc = "upper right", fontsize = "small")
                 
         # compute average and standard deviation of final costs of different runs
         final_costs = np.array([costs_i[-1] for costs_i in costs_different_initializations["UNIFORMLY_K_POINTS"]])
         print "Average:", np.average(final_costs), ", Standard deviation:", np.std(final_costs) 
         
         for i in range(5):
-            axises[-1].plot(costs_different_initializations["UNIFORMLY_K_POINTS"][i], label = "UNIFORMLY_K_POINTS" + "_" + str(i + 1))
-        axises[-1].legend(loc = "upper right", fontsize = "small")
-        axises[-1].set_xlabel("Number of iterations")
-        axises[-1].set_ylabel("Cost function")
+            axeses[-1].plot(costs_different_initializations["UNIFORMLY_K_POINTS"][i], label = "UNIFORMLY_K_POINTS" + "_" + str(i + 1))
+        axeses[-1].legend(loc = "upper right", fontsize = "small")
+        axeses[-1].set_xlabel("Number of iterations")
+        axeses[-1].set_ylabel("Cost function")
             
         ## initialize with k-means++
         print "K_MEANS_PLUS_PLUS"
-        fig3, axises = plt.subplots(3, 2)
-        fig3.suptitle("Clusters and cost function with k-means++, k= " + str(k))
-        axises = np.reshape(axises, axises.size)
+        fig3, axeses = plt.subplots(3, 2)
+        fig3.suptitle("Clusters and cost function with k-means++, k= " + str(k), fontsize = "large")
+        axeses = np.reshape(axeses, axeses.size)
         
         costs_different_initializations["K_MEANS_PLUS_PLUS"] = []
         k_centers, points_labels, k_means_cost_function_values = None, None, None
@@ -232,21 +232,21 @@ if __name__ == "__main__":
             k_centers_x = [c[0] for c in k_centers]
             k_centers_y = [c[1] for c in k_centers]
 
-            axises[i].scatter(points_x, points_y, c = [CATEGORY10[label] for label in points_labels], alpha = 0.8, label = "clusters")
-            axises[i].scatter(k_centers_x, k_centers_y, marker = "+", label = "centers")
-            axises[i].set_ylim([min(points_x), max(points_y) + 5])
-            axises[i].set_title("Run " + str(i + 1), fontsize = "medium")
-            axises[i].legend(loc = "upper right", fontsize = "small")
+            axeses[i].scatter(points_x, points_y, c = [CATEGORY10[label] for label in points_labels], alpha = 0.8, label = "clusters")
+            axeses[i].scatter(k_centers_x, k_centers_y, marker = "+", label = "centers")
+            axeses[i].set_ylim([min(points_x), max(points_y) + 5])
+            axeses[i].set_title("Run " + str(i + 1), fontsize = "medium")
+            axeses[i].legend(loc = "upper right", fontsize = "small")
         
         # compute average and standard deviation of final costs of different runs
         final_costs = np.array([costs_i[-1] for costs_i in costs_different_initializations["K_MEANS_PLUS_PLUS"]])
         print "Average:", np.average(final_costs), ", Standard deviation:", np.std(final_costs)
            
         for i in range(5):
-            axises[-1].plot(costs_different_initializations["K_MEANS_PLUS_PLUS"][i], label = "K_MEANS_PLUS_PLUS" + "_" + str(i + 1))
-        axises[-1].legend(loc = "upper right", fontsize = "small")
-        axises[-1].set_xlabel("Number of iterations")
-        axises[-1].set_ylabel("Cost function")
+            axeses[-1].plot(costs_different_initializations["K_MEANS_PLUS_PLUS"][i], label = "K_MEANS_PLUS_PLUS" + "_" + str(i + 1))
+        axeses[-1].legend(loc = "upper right", fontsize = "small")
+        axeses[-1].set_xlabel("Number of iterations")
+        axeses[-1].set_ylabel("Cost function")
         
         ## initialize with GONZALES' algorithm
         print "GONZALES_ALGORITHM"
@@ -258,39 +258,39 @@ if __name__ == "__main__":
         k_centers_x = [c[0] for c in k_centers]
         k_centers_y = [c[1] for c in k_centers]
         
-        fig4, (axis_clusters, axis_cost) = plt.subplots(1, 2)
-        axis_clusters.scatter(points_x, points_y, c = [CATEGORY10[label] for label in points_labels], alpha = 0.8, label = "clusters")
-        axis_clusters.scatter(k_centers_x, k_centers_y, marker = "+", label = "centers")
-        axis_clusters.set_ylim([min(points_x), max(points_y) + 5])
-        axis_clusters.set_title("Clusters with GONZALES' algorithm initialization, k= " + str(k))
-        axis_clusters.legend(loc = "upper right", fontsize = "medium")
+        fig4, (axes_clusters, axes_cost) = plt.subplots(1, 2)
+        axes_clusters.scatter(points_x, points_y, c = [CATEGORY10[label] for label in points_labels], alpha = 0.8, label = "clusters")
+        axes_clusters.scatter(k_centers_x, k_centers_y, marker = "+", label = "centers")
+        axes_clusters.set_ylim([min(points_x), max(points_y) + 5])
+        axes_clusters.set_title("Clusters with GONZALES' algorithm initialization, k= " + str(k))
+        axes_clusters.legend(loc = "upper right", fontsize = "medium")
         
-        axis_cost.plot(k_means_cost_function_values)
-        axis_cost.set_title("Cost function with GONZALES' algorithm initialization, k= " + str(k))
-        axis_cost.set_xlabel("Number of iterations")
-        axis_cost.set_ylabel("Cost function")
+        axes_cost.plot(k_means_cost_function_values)
+        axes_cost.set_title("Cost function with GONZALES' algorithm initialization, k= " + str(k))
+        axes_cost.set_xlabel("Number of iterations")
+        axes_cost.set_ylabel("Cost function")
         
         ## plot the cost function comparison
-        fig5, axis_costs = plt.subplots(1, 1)
+        fig5, axes_costs = plt.subplots(1, 1)
         fig5.suptitle("Cost function with different initializations, k= " + str(k), fontsize = "large")
         
         # customize rc settings
         # Filter out filled markers and marker settings that do nothing.
         unfilled_markers = [m for m, func in Line2D.markers.iteritems()\
                             if func != 'nothing' and m not in Line2D.filled_markers]      
-        axis_costs.set_prop_cycle(cycler('marker', unfilled_markers))
+        axes_costs.set_prop_cycle(cycler('marker', unfilled_markers))
         
         for key in costs_different_initializations:
             costs = costs_different_initializations[key]
             if all(isinstance(costs_i, list) for costs_i in costs):
                 for i in range(len(costs)):
-                    axis_costs.plot(range(1, len(costs[i]) + 1), costs[i], label = key + "_" + str(i + 1))
-                # axis_costs.plot(range(1, len(costs[0]) + 1), costs[0], label = key)
+                    axes_costs.plot(range(1, len(costs[i]) + 1), costs[i], label = key + "_" + str(i + 1))
+                # axes_costs.plot(range(1, len(costs[0]) + 1), costs[0], label = key)
             else:
-                axis_costs.plot(range(1, len(costs) + 1), costs, label = key)
+                axes_costs.plot(range(1, len(costs) + 1), costs, label = key)
             
-        axis_costs.legend(loc = "upper right", fontsize = "medium")
-        axis_costs.set_xlabel("Number of iterations")
-        axis_costs.set_ylabel("Cost function")
+        axes_costs.legend(loc = "upper right", fontsize = "medium")
+        axes_costs.set_xlabel("Number of iterations")
+        axes_costs.set_ylabel("Cost function")
         
         plt.show()

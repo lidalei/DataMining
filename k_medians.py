@@ -10,7 +10,7 @@ K_MEANS_PLUS_PLUS = 3
 GONZALES_ALGORITHM = 4
 K_MEANS_PLUS_PLUS_RESULT = 5
 # data set file name
-DATA_SET_FILE = "data1b/C2.txt"
+DATA_SET_FILE = "data1b/C3.txt"
 # clusters colors
 CATEGORY10 = np.array([ [31, 119, 180], [255, 127, 14], [44, 160, 44], [214, 39, 40],
                         [148, 103, 189], [140, 86, 75], [227, 119, 194], [127, 127, 127],
@@ -159,12 +159,13 @@ def k_medians(points, k, initialization_method):
 
 if __name__ == "__main__":
     # number of clusters
-    k = 3
+    k = 4
     print "k:", k
     
     points = dataloader_1b.load_data_1b(DATA_SET_FILE)
     k_centers, points_labels, k_medians_cost_function_values = k_medians(points, k, K_MEANS_PLUS_PLUS_RESULT)
     
+    print "Centers:", k_centers
     print "Cost function:", k_medians_cost_function_values
     
     points_x = [p[0] for p in points]
