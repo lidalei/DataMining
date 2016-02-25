@@ -168,6 +168,7 @@ if __name__ == "__main__":
     print "Centers:", k_centers
     print "Cost function:", k_medians_cost_function_values
     
+    """
     points_x = [p[0] for p in points]
     points_y = [p[1] for p in points]
     
@@ -178,3 +179,4 @@ if __name__ == "__main__":
     plt.scatter(points_x, points_y, c = [CATEGORY10[label] / 255.0 for label in points_labels], alpha = 0.8)
     plt.ylim([min(points_x), max(points_y) + 5])
     plt.show()
+    """
