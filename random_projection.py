@@ -3,6 +3,7 @@ Random projection, Assignment 1c
 """
 import numpy as np
 import matplotlib.pylab as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import random, mnist_dataloader
 from scipy.spatial.distance import euclidean
 
@@ -81,6 +82,11 @@ if __name__ == "__main__":
                 m_instances_distortions[i][j] = euclidean(projected_m_instances[i], projected_m_instances[j]) / euclidean(m_instances[i], m_instances[j])
                 m_instances_distortions[j][i] = m_instances_distortions[i][j]
         # heat map
+        axes.set_title("k=" + str(k), fontsize = "medium")
+        # align colormap with heatmap
+        divider = make_axes_locatable(axes)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        
         im = axes.imshow(m_instances_distortions)
-        plt.colorbar(mappable = im, ax = axes, orientation='horizontal')
+        plt.colorbar(mappable = im, ax = axes, cax = cax, orientation='vertical')
     plt.show()
