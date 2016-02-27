@@ -7,14 +7,20 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import random, mnist_dataloader
 from scipy.spatial.distance import euclidean
 import multiprocessing
-import time    
+import time
 
+"""
+load data sets
+"""
+def load_data_sets():
 # load data set
-training_data, validation_data, test_data = mnist_dataloader.load_data()
-training_data_instances = training_data[0]
-training_data_labels = training_data[1]
-test_data_instances = test_data[0]
-test_data_labels = test_data[1]
+    training_data, validation_data, test_data = mnist_dataloader.load_data()
+    training_data_instances = training_data[0]
+    training_data_labels = training_data[1]
+    test_data_instances = test_data[0]
+    test_data_labels = test_data[1]
+    
+    return training_data_instances, training_data_labels, test_data_instances, test_data_labels
 
 """
 Generate random projection matrix R
@@ -50,8 +56,9 @@ def random_projection(R, P):
 
 """
 plot heat map
+@param training_data_instances: training data instances
 """
-def heat_map():
+def heat_map(training_data_instances):
     # dimension of a training data instance
     d = training_data_instances.shape[1]
     # first m instances considered
@@ -97,12 +104,15 @@ def heat_map():
 
 """
 classify test_data
+@param training_data_instances
+@param training_data_labels
+@param test_data_instances
 @param test_instance_start_index
 @param test_instance_end_index
 @param classified_results: classified results, shared by different subprocesses
 @return: None. Note, the updated classified results array.
 """
-def find_nearest_instance_subprocess(test_instance_start_index, test_instance_end_index,\
+def find_nearest_instances_subprocess(training_data_instances, training_data_labels, test_data_instances, test_instance_start_index, test_instance_end_index,\
                                       classified_results):
     # print test_instance_start_index, test_instance_end_index
     for test_instance_index in range(test_instance_start_index, test_instance_end_index):
@@ -119,12 +129,16 @@ def find_nearest_instance_subprocess(test_instance_start_index, test_instance_en
         classified_results[test_instance_index] =\
          training_data_labels[int(minimal_euclidean_distance_index)]
 
-if __name__ == '__main__':
-    ## plot heatmap
-    # heat_map()
-    
+"""
+find nearest neighbor algorithm without random projection
+@param training_data_instances
+@param training_data_labels
+@param test_data_instances
+@param test_data_labels
+@return: classified_results, error_rate, and confusion_matrix
+"""
+def find_nearest_instances(training_data_instances, training_data_labels, test_data_instances, test_data_labels):
     start_time = time.time()
-    multiprocessing.freeze_support()
     # speed using multiple processes
     NUMBER_OF_PROCESSES = 4
     processes = []
@@ -136,10 +150,13 @@ if __name__ == '__main__':
                                     int(len(test_data_instances) / NUMBER_OF_PROCESSES))
     test_data_subdivisions[-1] = len(test_data_instances)
     for process_index in range(NUMBER_OF_PROCESSES):
-        process = multiprocessing.Process(target = find_nearest_instance_subprocess,\
-                                           args = (test_data_subdivisions[process_index],\
-                                                    test_data_subdivisions[process_index + 1],\
-                                                     classified_results))
+        process = multiprocessing.Process(target = find_nearest_instances_subprocess,
+                                          args = (training_data_instances,
+                                                  training_data_labels,
+                                                  test_data_instances,
+                                                  test_data_subdivisions[process_index],
+                                                  test_data_subdivisions[process_index + 1],
+                                                  classified_results))
         process.start()
         processes.append(process)
         
@@ -158,5 +175,36 @@ if __name__ == '__main__':
             error_count += 1
         confusion_matrix[test_data_labels[test_instance_index]][classified_label] += 1        
         
-    print "Error rate is", 100.0 * error_count / len(test_data_instances), "%"
-    print "Confusion matrix is", confusion_matrix
+    error_rate = 100.0 * error_count / len(test_data_instances)
+    
+    return classified_results, error_rate, confusion_matrix
+
+if __name__ == '__main__':
+    multiprocessing.freeze_support()
+    training_data_instances, training_data_labels, test_data_instances, test_data_labels = load_data_sets()
+    
+    ## plot heatmap
+    # heat_map(training_data_instances)
+    
+    ## nearest neighbor without random projection
+    find_nearest_instances(training_data_instances, training_data_labels, test_data_instances, test_data_labels)
+    
+    ## random projection
+    # dimension of a training data instance
+    d = training_data_instances.shape[1]
+    for k in [50, 100, 500]:
+        ## generate random projection matrix
+        random_projection_matrix =  generate_random_projection_matrix(k, d)
+        ## random projection
+        """
+        # transpose to column vector (matrix) before projection and recover after projection
+        random_projected_matrix = np.transpose(random_projection(random_projection_matrix, np.transpose(training_data_instances[0:20])))
+        
+        print random_projected_matrix[0], random_projected_matrix.shape
+        """
+        
+        projected_training_instances = np.zeros((len(training_data_instances), k), dtype = np.float64)
+        for i in range(training_data_instances.shape[0]):
+            for j in range(projected_training_instances.shape[1]):
+                projected_training_instances[i][j] = np.dot(random_projection_matrix[j], training_data_instances[i])
+        
