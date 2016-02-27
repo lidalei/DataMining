@@ -4,7 +4,8 @@ Random projection, Assignment 1c
 import numpy as np
 import matplotlib.pylab as plt
 import random, mnist_dataloader
-from numpy import dtype
+from scipy.spatial.distance import euclidean
+
 
 """
 Generate random projection matrix R
@@ -49,11 +50,37 @@ if __name__ == "__main__":
     test_data_labels = test_data[1]
     # dimension of a training data instance
     d = training_data_instances.shape[1]
-        
-    for k in [50, 100, 500]:
+    # first m instances considered
+    m = 20
+    
+    fig, axeses = plt.subplots(1, 3)
+    fig.suptitle("Distortion of random projection", fontsize = "large")
+    axeses = np.reshape(axeses, axeses.size)
+    
+    for k, axes in zip([50, 100, 500], axeses):
+        ## generate random projection matrix
         random_projection_matrix =  generate_random_projection_matrix(k, d)
+        ## random projection
+        """
         # transpose to column vector (matrix) before projection and recover after projection
         random_projected_matrix = np.transpose(random_projection(random_projection_matrix, np.transpose(training_data_instances[0:20])))
         
         print random_projected_matrix[0], random_projected_matrix.shape
+        """
         
+        m_instances = training_data_instances[0:m]
+        projected_m_instances = np.zeros((m, k), dtype = np.float64)
+        for i in range(m_instances.shape[0]):
+            for j in range(projected_m_instances.shape[1]):
+                projected_m_instances[i][j] = np.dot(random_projection_matrix[j], m_instances[i])
+        # print  projected_m_instances[0]
+        ## evaluate distortion
+        m_instances_distortions = np.zeros((m, m), dtype = np.float64)
+        for i in range(m_instances_distortions.shape[0]):
+            for j in range(i + 1, m_instances_distortions.shape[1]):
+                m_instances_distortions[i][j] = euclidean(projected_m_instances[i], projected_m_instances[j]) / euclidean(m_instances[i], m_instances[j])
+                m_instances_distortions[j][i] = m_instances_distortions[i][j]
+        # heat map
+        im = axes.imshow(m_instances_distortions)
+        plt.colorbar(mappable = im, ax = axes, orientation='horizontal')
+    plt.show()
