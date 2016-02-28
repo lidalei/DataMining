@@ -187,7 +187,9 @@ if __name__ == '__main__':
     # heat_map(training_data_instances)
     
     ## nearest neighbor without random projection
-    find_nearest_instances(training_data_instances, training_data_labels, test_data_instances, test_data_labels)
+    # classified_results, error_rate, confusion_matrix = find_nearest_instances(training_data_instances, training_data_labels, test_data_instances, test_data_labels)
+    # print "Error rate:", error_rate
+    # print "Confusion matrix:", confusion_matrix
     
     ## random projection
     # dimension of a training data instance
@@ -195,16 +197,17 @@ if __name__ == '__main__':
     for k in [50, 100, 500]:
         ## generate random projection matrix
         random_projection_matrix =  generate_random_projection_matrix(k, d)
-        ## random projection
-        """
-        # transpose to column vector (matrix) before projection and recover after projection
-        random_projected_matrix = np.transpose(random_projection(random_projection_matrix, np.transpose(training_data_instances[0:20])))
-        
-        print random_projected_matrix[0], random_projected_matrix.shape
-        """
-        
+        ## random projection        
         projected_training_instances = np.zeros((len(training_data_instances), k), dtype = np.float64)
         for i in range(training_data_instances.shape[0]):
             for j in range(projected_training_instances.shape[1]):
                 projected_training_instances[i][j] = np.dot(random_projection_matrix[j], training_data_instances[i])
         
+        projected_test_instances = np.zeros((len(test_data_instances), k), dtype = np.float64)
+        for i in range(test_data_instances.shape[0]):
+            for j in range(projected_test_instances.shape[1]):
+                projected_test_instances[i][j] = np.dot(random_projection_matrix[j], test_data_instances[i])
+        
+        classified_results, error_rate, confusion_matrix = find_nearest_instances(projected_training_instances, training_data_labels, projected_test_instances, test_data_labels)
+        print "Error rate:", error_rate
+        print "Confusion matrix:", confusion_matrix
