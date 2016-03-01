@@ -32,11 +32,9 @@ Generate random projection matrix R
 def generate_random_projection_matrix(k, d):
     R = np.zeros((k, d), dtype = np.float64)
     for r in np.nditer(R, op_flags=['readwrite']):
-        r[...] = random.randint(0, 1)
-        if r[...] == 0:
-            r[...] = -1
-    
-    R *= 1.0 / np.sqrt(k)
+        r[...] = 2 * random.randint(0, 1) - 1
+    # to be cautious, this is the point the exercise wants us to get
+    R *= 1.0 / np.sqrt(d)
     
     return R
 
@@ -72,25 +70,26 @@ def heat_map(training_data_instances):
         ## generate random projection matrix
         random_projection_matrix =  generate_random_projection_matrix(k, d)
         ## random projection
-        """
-        # transpose to column vector (matrix) before projection and recover after projection
-        random_projected_matrix = np.transpose(random_projection(random_projection_matrix, np.transpose(training_data_instances[0:20])))
-        
-        print random_projected_matrix[0], random_projected_matrix.shape
-        """
-        
         m_instances = training_data_instances[0:m]
+        projected_m_instances = np.dot(m_instances, np.transpose(random_projection_matrix))
+        
+        # print random_projected_matrix[0], random_projected_matrix.shape
+        
+        """
         projected_m_instances = np.zeros((m, k), dtype = np.float64)
         for i in range(m_instances.shape[0]):
             for j in range(projected_m_instances.shape[1]):
                 projected_m_instances[i][j] = np.dot(random_projection_matrix[j], m_instances[i])
         # print  projected_m_instances[0]
+        """
         ## evaluate distortion
         m_instances_distortions = np.zeros((m, m), dtype = np.float64)
         for i in range(m_instances_distortions.shape[0]):
             for j in range(i + 1, m_instances_distortions.shape[1]):
                 m_instances_distortions[i][j] = euclidean(projected_m_instances[i], projected_m_instances[j]) / euclidean(m_instances[i], m_instances[j])
                 m_instances_distortions[j][i] = m_instances_distortions[i][j]
+        mean, std = np.mean(m_instances_distortions.reshape(m_instances_distortions.size)), np.std(m_instances_distortions.reshape(m_instances_distortions.size))
+        print "distortion =", mean, "+-", std
         # heat map
         axes.set_title("k=" + str(k), fontsize = "medium")
         # align colormap with heatmap
@@ -184,12 +183,13 @@ if __name__ == '__main__':
     training_data_instances, training_data_labels, test_data_instances, test_data_labels = load_data_sets()
     
     ## plot heatmap
-    # heat_map(training_data_instances)
-    
+    heat_map(training_data_instances)
+    """
     ## nearest neighbor without random projection
-    # classified_results, error_rate, confusion_matrix = find_nearest_instances(training_data_instances, training_data_labels, test_data_instances, test_data_labels)
-    # print "Error rate:", error_rate
-    # print "Confusion matrix:", confusion_matrix
+    print "Without random projection"
+    classified_results, error_rate, confusion_matrix = find_nearest_instances(training_data_instances, training_data_labels, test_data_instances, test_data_labels)
+    print "Error rate:", error_rate
+    print "Confusion matrix:", confusion_matrix
     
     ## random projection
     # dimension of a training data instance
@@ -211,3 +211,4 @@ if __name__ == '__main__':
         classified_results, error_rate, confusion_matrix = find_nearest_instances(projected_training_instances, training_data_labels, projected_test_instances, test_data_labels)
         print "Error rate:", error_rate
         print "Confusion matrix:", confusion_matrix
+    """
