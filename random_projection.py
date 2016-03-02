@@ -34,7 +34,7 @@ def generate_random_projection_matrix(k, d):
     for r in np.nditer(R, op_flags=['readwrite']):
         r[...] = 2 * random.randint(0, 1) - 1
     # to be cautious, this is the point the exercise wants us to get
-    R *= 1.0 / np.sqrt(d)
+    R *= 1.0 / np.sqrt(k)
     
     return R
 
