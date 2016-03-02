@@ -103,13 +103,13 @@ def find_nearest_instances_subprocess(training_data_instances, training_data_lab
                                       classified_results):
     # print test_instance_start_index, test_instance_end_index
     for test_instance_index in range(test_instance_start_index, test_instance_end_index):
+        test_instance = test_data_instances[test_instance_index]
         # find the nearest training instance with euclidean distance
-        minimal_euclidean_distance = euclidean(test_data_instances[test_instance_index], training_data_instances[0])
+        minimal_euclidean_distance = euclidean(test_instance, training_data_instances[0])
         minimal_euclidean_distance_index = 0
-        for training_instance, training_instance_index in\
-         zip(training_data_instances, range(len(training_data_instances))):
+        for training_instance, training_instance_index in zip(training_data_instances, range(len(training_data_instances))):
             # compute the euclidean distance
-            euclidean_distance = euclidean(test_data_instances[test_instance_index], training_instance)
+            euclidean_distance = euclidean(test_instance, training_instance)
             if euclidean_distance < minimal_euclidean_distance:
                 minimal_euclidean_distance = euclidean_distance
                 minimal_euclidean_distance_index = training_instance_index
@@ -171,8 +171,7 @@ if __name__ == '__main__':
     training_data_instances, training_data_labels, test_data_instances, test_data_labels = load_data_sets()
     
     ## plot distortion
-    plot_distortion(training_data_instances)
-    """
+    # plot_distortion(training_data_instances)
     ## nearest neighbor without random projection
     print "Without random projection"
     classified_results, error_rate, confusion_matrix = find_nearest_instances(training_data_instances, training_data_labels, test_data_instances, test_data_labels)
@@ -199,4 +198,3 @@ if __name__ == '__main__':
         classified_results, error_rate, confusion_matrix = find_nearest_instances(projected_training_instances, training_data_labels, projected_test_instances, test_data_labels)
         print "Error rate:", error_rate
         print "Confusion matrix:", confusion_matrix
-    """
