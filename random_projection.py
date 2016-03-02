@@ -53,52 +53,40 @@ def random_projection(R, P):
     return np.dot(R, P)
 
 """
-plot heat map
+plot distortion
 @param training_data_instances: training data instances
 """
-def heat_map(training_data_instances):
+def plot_distortion(training_data_instances):
     # dimension of a training data instance
     d = training_data_instances.shape[1]
     # first m instances considered
     m = 20
     
-    fig, axeses = plt.subplots(1, 3)
-    fig.suptitle("Distortion of random projection", fontsize = "large")
-    axeses = np.reshape(axeses, axeses.size)
+    fig, axes = plt.subplots(1, 1)
+    fig.suptitle("Distortion of random projection", fontsize = "x-large")
     
-    for k, axes in zip([50, 100, 500], axeses):
+    for k in [50, 100, 500]:
         ## generate random projection matrix
         random_projection_matrix =  generate_random_projection_matrix(k, d)
         ## random projection
         m_instances = training_data_instances[0:m]
         projected_m_instances = np.dot(m_instances, np.transpose(random_projection_matrix))
-        
         # print random_projected_matrix[0], random_projected_matrix.shape
+        ## evaluate distortion - line chart
+        m_instances_distortions = []
+        for i in range(m):
+            for j in range(i + 1, m):
+                m_instances_distortions.append(euclidean(projected_m_instances[i], projected_m_instances[j]) / euclidean(m_instances[i], m_instances[j]))
+        m_instances_distortions = np.array(m_instances_distortions)
+        mean, std = np.mean(m_instances_distortions), np.std(m_instances_distortions)
+        # line chart
+        axes.plot(m_instances_distortions, label = "k=" + str(k))
+        axes.plot([0, m_instances_distortions.size], [mean, mean], label = "k=" + str(k) + ", mean = " + str(round(mean, 4)))
         
-        """
-        projected_m_instances = np.zeros((m, k), dtype = np.float64)
-        for i in range(m_instances.shape[0]):
-            for j in range(projected_m_instances.shape[1]):
-                projected_m_instances[i][j] = np.dot(random_projection_matrix[j], m_instances[i])
-        # print  projected_m_instances[0]
-        """
-        ## evaluate distortion
-        m_instances_distortions = np.zeros((m, m), dtype = np.float64)
-        for i in range(m_instances_distortions.shape[0]):
-            for j in range(i + 1, m_instances_distortions.shape[1]):
-                m_instances_distortions[i][j] = euclidean(projected_m_instances[i], projected_m_instances[j]) / euclidean(m_instances[i], m_instances[j])
-                m_instances_distortions[j][i] = m_instances_distortions[i][j]
-        mean, std = np.mean(m_instances_distortions.reshape(m_instances_distortions.size)), np.std(m_instances_distortions.reshape(m_instances_distortions.size))
-        print "distortion =", mean, "+-", std
-        # heat map
-        axes.set_title("k=" + str(k), fontsize = "medium")
-        # align colormap with heatmap
-        divider = make_axes_locatable(axes)
-        cax = divider.append_axes("right", size="5%", pad=0.05)
-        
-        im = axes.imshow(m_instances_distortions)
-        axes.set_xlabel("instances", fontsize = "medium")
-        plt.colorbar(mappable = im, ax = axes, cax = cax, orientation='vertical')
+        print "k = ", k, "distortion =", mean, "+-", std
+    axes.set_xlabel("pairs of instances", fontsize = "large")
+    axes.set_ylabel("distortion", fontsize = "large")
+    axes.legend(loc = "center right", fontsize = "medium")
     plt.show()
 
 """
@@ -182,8 +170,8 @@ if __name__ == '__main__':
     multiprocessing.freeze_support()
     training_data_instances, training_data_labels, test_data_instances, test_data_labels = load_data_sets()
     
-    ## plot heatmap
-    heat_map(training_data_instances)
+    ## plot distortion
+    plot_distortion(training_data_instances)
     """
     ## nearest neighbor without random projection
     print "Without random projection"
