@@ -30,16 +30,22 @@ target_attribute = dataset.default_target_attribute
 target_attribute_names = meta[target_attribute][1]
 X, y, attribute_names = dataset.get_dataset(target = target_attribute, return_attribute_names = True)
 y_values = np.unique(y)
-fig = plt.figure()
+fig1, (axes_hist, axes_stem) = plt.subplots(1, 2)
 # plot the distribution of target attribute
-axes = fig.add_subplot(111)
-y_values_counts, bins, patches = axes.hist(y, bins = y_values.size, facecolor = 'green', alpha=0.5)
-axes.set_title('Histogram of ' + str(target_attribute) + ' of ' + dataset.name, fontsize = 'large')
-axes.set_xlabel('Values', fontsize = 'medium')
-axes.set_ylabel('Count', fontsize = 'medium')
+y_values_counts, bins, patches = axes_hist.hist(y, bins = y_values.size, align = 'mid', facecolor = 'green', alpha=0.5)
+print(y_values_counts)
+axes_hist.set_title('Histogram of ' + str(target_attribute) + ' of ' + dataset.name, fontsize = 'large')
+axes_hist.set_xlabel('Values', fontsize = 'medium')
+axes_hist.set_ylabel('Count', fontsize = 'medium')
+axes_stem.stem(y_values, y_values_counts)
+axes_stem.set_xlim(y_values[0] - 1, y_values[-1] + 1)
+axes_stem.set_title('Histogram of ' + str(target_attribute) + ' of ' + dataset.name, fontsize = 'large')
+axes_stem.set_xlabel('Values', fontsize = 'medium')
+axes_stem.set_ylabel('Count', fontsize = 'medium')
 # explore features
 # TODO
-# axes = fig.add_subplot()
+
+
 ## remove the smaller classes to get a binary problem
 kept_y_values = y_values[np.argsort(y_values_counts)[-2:]]
 # print(kept_y_values)
