@@ -30,18 +30,26 @@ target_attribute = dataset.default_target_attribute
 target_attribute_names = meta[target_attribute][1]
 X, y, attribute_names = dataset.get_dataset(target = target_attribute, return_attribute_names = True)
 y_values = np.unique(y)
-fig1, (axes_hist, axes_stem) = plt.subplots(1, 2)
+fig1, axes_bar = plt.subplots(1, 1)
 # plot the distribution of target attribute
-y_values_counts, bins, patches = axes_hist.hist(y, bins = y_values.size, align = 'mid', facecolor = 'green', alpha=0.5)
+y_values_counts, bin_edges = np.histogram(y, y_values.size, density = False)
 print(y_values_counts)
-axes_hist.set_title('Histogram of ' + str(target_attribute) + ' of ' + dataset.name, fontsize = 'large')
-axes_hist.set_xlabel('Values', fontsize = 'medium')
-axes_hist.set_ylabel('Count', fontsize = 'medium')
-axes_stem.stem(y_values, y_values_counts)
-axes_stem.set_xlim(y_values[0] - 1, y_values[-1] + 1)
-axes_stem.set_title('Histogram of ' + str(target_attribute) + ' of ' + dataset.name, fontsize = 'large')
-axes_stem.set_xlabel('Values', fontsize = 'medium')
-axes_stem.set_ylabel('Count', fontsize = 'medium')
+print(target_attribute_names)
+# the x locations for the groups
+ind = np.arange(y_values.size)
+# the width of the bars
+bar_width = 0.35
+rects = axes_bar.bar(ind, y_values_counts, bar_width, color = 'green', alpha = 0.8, edgecolor = 'green')
+# attach some text labels
+for rect in rects:
+    height = rect.get_height()
+    axes_bar.text(rect.get_x() + rect.get_width() / 2.0, height, '%d' % int(height), ha='center', va='bottom')
+axes_bar.set_xlim(-bar_width, len(ind) + bar_width)
+axes_bar.set_title('Histogram of ' + str(target_attribute) + ' of ' + dataset.name + ' dataset', fontsize = 'x-large')
+axes_bar.set_xticks(ind + bar_width / 2.0)
+axes_bar.set_xticklabels(target_attribute_names, fontsize = 'medium')
+axes_bar.set_xlabel('Class', fontsize = 'large')
+axes_bar.set_ylabel('Count', fontsize = 'large')
 # explore features
 # TODO
 
