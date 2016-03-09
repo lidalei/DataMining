@@ -51,7 +51,7 @@ axes_bar.set_xticklabels(target_attribute_names, fontsize = 'medium')
 axes_bar.set_xlabel('Class', fontsize = 'large')
 axes_bar.set_ylabel('Count', fontsize = 'large')
 # explore features
-# TODO
+
 
 
 ## remove the smaller classes to get a binary problem
@@ -60,11 +60,11 @@ kept_y_values = y_values[np.argsort(y_values_counts)[-2:]]
 
 select_indices = np.where(np.in1d(y, kept_y_values))
 # select_indices = np.where(np.logical_or(y == kept_y_values[0], y == kept_y_values[1]))
-binary_X, binary_y = X[select_indices], y[select_indices]
+bi_class_X, bi_class_y = X[select_indices], y[select_indices]
 
 ## CART
 clf_cart = DecisionTreeClassifier(max_depth = 3, min_samples_leaf = 5)
-clf_cart.fit(binary_X, binary_y)
+clf_cart.fit(bi_class_X, bi_class_y)
 export_graphviz(clf_cart, out_file = "cart.dot", feature_names = attribute_names,
                 class_names = target_attribute_names,
                 filled = True, rounded = True,
@@ -73,11 +73,11 @@ print(check_output('dot -Tpdf cart.dot -o cart.pdf', shell = True))
 
 ## study how stable the trees returned by CART
 for i in xrange(2):    
-    randomized_indices = np.random.permutation(len(binary_X))
-    randomized_binary_X, randomized_binary_y = binary_X[randomized_indices][:int(len(randomized_indices) * 0.7)],\
-    binary_y[randomized_indices][:int(len(randomized_indices) * 0.7)]
+    randomized_indices = np.random.permutation(len(bi_class_X))
+    randomized_bi_class_X, randomized_bi_class_y = bi_class_X[randomized_indices][:int(len(randomized_indices) * 0.7)],\
+    bi_class_y[randomized_indices][:int(len(randomized_indices) * 0.7)]
     clf_rnd_cart = DecisionTreeClassifier(max_depth = 3, min_samples_leaf = 5)
-    clf_rnd_cart.fit(randomized_binary_X, randomized_binary_y)
+    clf_rnd_cart.fit(randomized_bi_class_X, randomized_bi_class_y)
     output_file_name = 'rnd_cart_run' + str(i + 1) + '.dot'
     export_graphviz(clf_rnd_cart, out_file = output_file_name,
                     feature_names = attribute_names,
@@ -88,7 +88,7 @@ for i in xrange(2):
 
 ## randomized tree
 clf_rnd_tree = ExtraTreeClassifier(max_depth = 3, min_samples_leaf = 5)
-clf_rnd_tree.fit(binary_X, binary_y)
+clf_rnd_tree.fit(bi_class_X, bi_class_y)
 export_graphviz(clf_rnd_tree, out_file = 'rnd_tree.dot',
                 feature_names = attribute_names,
                 class_names = target_attribute_names,
