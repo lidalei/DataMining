@@ -30,13 +30,13 @@ target_attribute = dataset.default_target_attribute
 target_attribute_names = meta[target_attribute][1]
 X, y, attribute_names = dataset.get_dataset(target = target_attribute, return_attribute_names = True)
 y_values = np.unique(y)
-print(y_values)
-fig1, axes_bar = plt.subplots(1, 1)
+print('y_values%s'%y_values)
+fig, axes_bar = plt.subplots(1, 1)
 # plot the distribution of target attribute
 y_values_counts, bin_edges = np.histogram(y, y_values.size, density = False)
-print(y_values_counts, bin_edges)
+print('y_values_counts%s'%y_values_counts, bin_edges)
 target_attribute_names = np.array(target_attribute_names)
-print(target_attribute_names)
+print('target_attribute_names%s'%target_attribute_names)
 # the x locations for the groups
 ind = np.arange(y_values.size)
 # the width of the bars
@@ -61,28 +61,28 @@ for index, attribute in enumerate(attribute_names):
 
 ## remove the smaller classes to get a binary problem
 kept_y_values = np.sort(y_values[np.argsort(y_values_counts)[-2:]])
-print(kept_y_values)
+print('kept_y_values%s'%kept_y_values)
 
 select_indices = np.where(np.in1d(y, kept_y_values))
 # select_indices = np.where(np.logical_or(y == kept_y_values[0], y == kept_y_values[1]))
 bi_class_X, bi_class_y = X[select_indices], y[select_indices] - 1
 bi_class_target_attrs = target_attribute_names[kept_y_values]
-print(bi_class_target_attrs)
+print('bi_class_target_attrs%s'%bi_class_target_attrs)
 
-'''
 ## To evaluate the performance, we get the seventy percent of data as training data
 ## and the remaining thirty percent as test data
 rnd_indices = np.random.permutation(len(bi_class_X))
 rnd_training_X, rnd_training_y = bi_class_X[rnd_indices[:int(len(rnd_indices) * 0.7)]], bi_class_y[rnd_indices[:int(len(rnd_indices) * 0.7)]]
 rnd_test_X, rnd_test_y = bi_class_X[rnd_indices[int(len(rnd_indices) * 0.7):]], bi_class_y[rnd_indices[int(len(rnd_indices) * 0.7):]]
-## CART
+## CART with default setting
 clf_cart = DecisionTreeClassifier()
 clf_cart.fit(rnd_training_X, rnd_training_y)
-export_graphviz(clf_cart, out_file = "cart.dot", feature_names = attribute_names,
+export_graphviz(clf_cart, out_file = "default_cart.dot", feature_names = attribute_names,
                 class_names = bi_class_target_attrs,
                 filled = True, rounded = True,
                 special_characters = True)
-print(check_output('dot -Tpdf cart.dot -o cart.pdf', shell = True))
+print(check_output('dot -Tpdf default_cart.dot -o default_cart.pdf', shell = True))
+print("Accuracy = %s"%accuracy_score(rnd_test_y, clf_cart.predict(rnd_test_X)))
 print("Precision = %s"%precision_score(rnd_test_y, clf_cart.predict(rnd_test_X)))
 print("Recall = %s"%recall_score(rnd_test_y, clf_cart.predict(rnd_test_X)))
 print("F = %s"%fbeta_score(rnd_test_y, clf_cart.predict(rnd_test_X), beta=1))
@@ -90,15 +90,53 @@ print("Confusion matrix = %s"%confusion_matrix(rnd_test_y, clf_cart.predict(rnd_
 roc_auc_scorer = get_scorer("roc_auc")
 print("ROC AUC = %s"%roc_auc_scorer(clf_cart, rnd_test_X, rnd_test_y))
 fpr, tpr, thresholds = roc_curve(rnd_test_y, clf_cart.predict_proba(rnd_test_X)[:, 1])
-fig_cart_roc, axes_cart = plt.subplots(1, 1)
-axes_cart.plot(fpr, tpr)
-axes_cart.set_title("ROC of CART")
-axes_cart.set_xlabel("FPR")
-axes_cart.set_ylabel("TPR")
-axes_cart.set_ylim(0, 1.1)
+figt_roc, axes_roc = plt.subplots(1, 1)
+axes_roc.plot(fpr, tpr, label = 'CART-1')
 
-## randomized tree
+# CART with max_depth = 4, min_samples_leaf = 5
+clf_cart = DecisionTreeClassifier(max_depth = 4, min_samples_leaf = 5)
+clf_cart.fit(rnd_training_X, rnd_training_y)
+export_graphviz(clf_cart, out_file = "cart.dot", feature_names = attribute_names,
+                class_names = bi_class_target_attrs,
+                filled = True, rounded = True,
+                special_characters = True)
+print(check_output('dot -Tpdf cart.dot -o cart.pdf', shell = True))
+print("Accuracy = %s"%accuracy_score(rnd_test_y, clf_cart.predict(rnd_test_X)))
+print("Precision = %s"%precision_score(rnd_test_y, clf_cart.predict(rnd_test_X)))
+print("Recall = %s"%recall_score(rnd_test_y, clf_cart.predict(rnd_test_X)))
+print("F = %s"%fbeta_score(rnd_test_y, clf_cart.predict(rnd_test_X), beta=1))
+print("Confusion matrix = %s"%confusion_matrix(rnd_test_y, clf_cart.predict(rnd_test_X)))
+roc_auc_scorer = get_scorer("roc_auc")
+print("ROC AUC = %s"%roc_auc_scorer(clf_cart, rnd_test_X, rnd_test_y))
+fpr, tpr, thresholds = roc_curve(rnd_test_y, clf_cart.predict_proba(rnd_test_X)[:, 1])
+axes_roc.plot(fpr, tpr, label = 'CART-2')
+
+## randomized tree with default setting
 clf_rnd_tree = ExtraTreeClassifier()
+clf_rnd_tree.fit(rnd_training_X, rnd_training_y)
+export_graphviz(clf_rnd_tree, out_file = 'default_rnd_tree.dot',
+                feature_names = attribute_names,
+                class_names = bi_class_target_attrs,
+                filled = True, rounded = True,
+                special_characters = True)
+print(check_output('dot -Tpdf default_rnd_tree.dot -o default_rnd_tree.pdf', shell = True))
+print("Accuracy = %s"%accuracy_score(rnd_test_y, clf_rnd_tree.predict(rnd_test_X)))
+print("Precision = %s"%precision_score(rnd_test_y, clf_rnd_tree.predict(rnd_test_X)))
+print("Recall = %s"%recall_score(rnd_test_y, clf_rnd_tree.predict(rnd_test_X)))
+print("F = %s"%fbeta_score(rnd_test_y, clf_rnd_tree.predict(rnd_test_X), beta=1))
+print("Confusion matrix = %s"%confusion_matrix(rnd_test_y, clf_rnd_tree.predict(rnd_test_X)))
+fpr, tpr, thresholds = roc_curve(rnd_test_y, clf_rnd_tree.predict_proba(rnd_test_X)[:, 1])
+axes_roc.plot(fpr, tpr, label = "Randomized tree-1")
+axes_roc.set_title("ROC of CART and a randomized tree")
+axes_roc.set_xlabel("FPR")
+axes_roc.set_ylabel("TPR")
+axes_roc.set_ylim(0, 1.1)
+axes_roc.legend(loc = 'best', fontsize = 'medium')
+roc_auc_scorer = get_scorer("roc_auc")
+print("ROC AUC = %s"%roc_auc_scorer(clf_rnd_tree, rnd_test_X, rnd_test_y))
+
+# randomized tree with max_depth = 4, min_samples_leaf = 5
+clf_rnd_tree = ExtraTreeClassifier(max_depth = 4, min_samples_leaf = 5)
 clf_rnd_tree.fit(rnd_training_X, rnd_training_y)
 export_graphviz(clf_rnd_tree, out_file = 'rnd_tree.dot',
                 feature_names = attribute_names,
@@ -106,22 +144,23 @@ export_graphviz(clf_rnd_tree, out_file = 'rnd_tree.dot',
                 filled = True, rounded = True,
                 special_characters = True)
 print(check_output('dot -Tpdf rnd_tree.dot -o rnd_tree.pdf', shell = True))
+print("Accuracy = %s"%accuracy_score(rnd_test_y, clf_rnd_tree.predict(rnd_test_X)))
 print("Precision = %s"%precision_score(rnd_test_y, clf_rnd_tree.predict(rnd_test_X)))
 print("Recall = %s"%recall_score(rnd_test_y, clf_rnd_tree.predict(rnd_test_X)))
 print("F = %s"%fbeta_score(rnd_test_y, clf_rnd_tree.predict(rnd_test_X), beta=1))
 print("Confusion matrix = %s"%confusion_matrix(rnd_test_y, clf_rnd_tree.predict(rnd_test_X)))
 fpr, tpr, thresholds = roc_curve(rnd_test_y, clf_rnd_tree.predict_proba(rnd_test_X)[:, 1])
-fig_rnd_tree_roc, axes_rnd_tree = plt.subplots()
-axes_rnd_tree.plot(fpr, tpr)
-axes_rnd_tree.set_title("ROC of a randomized tree")
-axes_rnd_tree.set_xlabel("FPR")
-axes_rnd_tree.set_ylabel("TPR")
-axes_rnd_tree.set_ylim(0, 1.1)
+axes_roc.plot(fpr, tpr, label = "Randomized tree-2")
+axes_roc.set_title("ROC of CART and a randomized tree")
+axes_roc.set_xlabel("FPR")
+axes_roc.set_ylabel("TPR")
+axes_roc.set_ylim(0, 1.1)
+axes_roc.legend(loc = 'best', fontsize = 'medium')
 roc_auc_scorer = get_scorer("roc_auc")
 print("ROC AUC = %s"%roc_auc_scorer(clf_rnd_tree, rnd_test_X, rnd_test_y))
-'''
 
 ## study how stable the trees returned by CART
+fig_rnd_tree_roc, axes_rnd_tree = plt.subplots()
 for i in xrange(5):    
     rnd_indices = np.random.permutation(len(bi_class_X))
     training_indices = rnd_indices[:int(len(rnd_indices) * 0.7)]
@@ -130,25 +169,27 @@ for i in xrange(5):
     test_X, test_y = bi_class_X[test_indices], bi_class_y[test_indices]
     clf_rnd_cart = DecisionTreeClassifier(max_depth = 4, min_samples_leaf = 5)
     clf_rnd_cart.fit(training_X, training_y)
-    output_file_name = 'rnd_cart_run' + str(i + 1) + '.dot'
+    output_file_name = 'cart_run' + str(i + 1) + '.dot'
     export_graphviz(clf_rnd_cart, out_file = output_file_name,
                     feature_names = attribute_names,
                     class_names = bi_class_target_attrs,
                     filled=True, rounded=True,
                     special_characters=True)
     print(check_output('dot -Tpdf ' + output_file_name + ' -o ' + output_file_name.replace('.dot', '.pdf'), shell = True))
+    print("Accuracy = %s"%accuracy_score(test_y, clf_rnd_cart.predict(test_X)))
     print("Precision = %s"%precision_score(test_y, clf_rnd_cart.predict(test_X)))
     print("Recall = %s"%recall_score(test_y, clf_rnd_cart.predict(test_X)))
     print("F = %s"%fbeta_score(test_y, clf_rnd_cart.predict(test_X), beta=1))
     print("Confusion matrix = %s"%confusion_matrix(test_y, clf_rnd_cart.predict(test_X)))
     fpr, tpr, thresholds = roc_curve(test_y, clf_rnd_cart.predict_proba(test_X)[:, 1])
-    fig_rnd_tree_roc, axes_rnd_tree = plt.subplots()
-    axes_rnd_tree.plot(fpr, tpr)
-    axes_rnd_tree.set_title("ROC of a randomized tree")
-    axes_rnd_tree.set_xlabel("FPR")
-    axes_rnd_tree.set_ylabel("TPR")
-    axes_rnd_tree.set_ylim(0, 1.1)
+    axes_rnd_tree.plot(fpr, tpr, label = 'CART-' + str(i + 1))
     roc_auc_scorer = get_scorer("roc_auc")
     print("ROC AUC = %s"%roc_auc_scorer(clf_rnd_cart, test_X, test_y))
     
+axes_rnd_tree.set_title("ROCs of five CART")
+axes_rnd_tree.set_xlabel("FPR")
+axes_rnd_tree.set_ylabel("TPR")
+axes_rnd_tree.set_ylim(0, 1.1)
+axes_rnd_tree.legend(loc = 'best', fontsize = 'medium')
+
 plt.show()
