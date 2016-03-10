@@ -1,0 +1,33 @@
+digraph Tree {
+node [shape=box, style="filled, rounded", color="black", fontname=helvetica] ;
+edge [fontname=helvetica] ;
+0 [label=<no_of_nodes_in &le; 1.5<br/>gini = 0.4885<br/>samples = 99<br/>value = [57, 42]<br/>class = metastases>, fillcolor="#e5813943"] ;
+1 [label=<block_of_affere &le; 0.5<br/>gini = 0.2188<br/>samples = 40<br/>value = [35, 5]<br/>class = metastases>, fillcolor="#e58139db"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label=<special_forms &le; 0.5<br/>gini = 0.4297<br/>samples = 16<br/>value = [11, 5]<br/>class = metastases>, fillcolor="#e581398b"] ;
+1 -> 2 ;
+3 [label=<gini = 0.0<br/>samples = 8<br/>value = [8, 0]<br/>class = metastases>, fillcolor="#e58139ff"] ;
+2 -> 3 ;
+4 [label=<gini = 0.4688<br/>samples = 8<br/>value = [3, 5]<br/>class = malign_lymph>, fillcolor="#399de566"] ;
+2 -> 4 ;
+5 [label=<gini = 0.0<br/>samples = 24<br/>value = [24, 0]<br/>class = metastases>, fillcolor="#e58139ff"] ;
+1 -> 5 ;
+6 [label=<block_of_affere &le; 0.5<br/>gini = 0.4677<br/>samples = 59<br/>value = [22, 37]<br/>class = malign_lymph>, fillcolor="#399de567"] ;
+0 -> 6 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+7 [label=<special_forms &le; 1.5<br/>gini = 0.1528<br/>samples = 24<br/>value = [2, 22]<br/>class = malign_lymph>, fillcolor="#399de5e8"] ;
+6 -> 7 ;
+8 [label=<gini = 0.4444<br/>samples = 6<br/>value = [2, 4]<br/>class = malign_lymph>, fillcolor="#399de57f"] ;
+7 -> 8 ;
+9 [label=<gini = 0.0<br/>samples = 18<br/>value = [0, 18]<br/>class = malign_lymph>, fillcolor="#399de5ff"] ;
+7 -> 9 ;
+10 [label=<changes_in_node &le; 2.5<br/>gini = 0.4898<br/>samples = 35<br/>value = [20, 15]<br/>class = metastases>, fillcolor="#e5813940"] ;
+6 -> 10 ;
+11 [label=<changes_in_node &le; 1.5<br/>gini = 0.4082<br/>samples = 28<br/>value = [20, 8]<br/>class = metastases>, fillcolor="#e5813999"] ;
+10 -> 11 ;
+12 [label=<gini = 0.2778<br/>samples = 6<br/>value = [1, 5]<br/>class = malign_lymph>, fillcolor="#399de5cc"] ;
+11 -> 12 ;
+13 [label=<gini = 0.2355<br/>samples = 22<br/>value = [19, 3]<br/>class = metastases>, fillcolor="#e58139d7"] ;
+11 -> 13 ;
+14 [label=<gini = 0.0<br/>samples = 7<br/>value = [0, 7]<br/>class = malign_lymph>, fillcolor="#399de5ff"] ;
+10 -> 14 ;
+}
