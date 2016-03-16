@@ -63,6 +63,7 @@ ax.legend(loc = 'lower right', fontsize = 'medium', scatterpoints = 1)
 ## draw iso-cost lines
 for cost in np.nditer(np.arange(0.0, 3.2, 0.4)):
     ax.plot([0.0, 1.0], [1 - 0.4 * cost, 1 + 0.2 * 1.0 - 0.4 * cost], '--')
+    ax.annotate(str(cost), xy = (0.5, 1 + 0.2 * 0.5 - 0.4 * cost), xytext = (1, 1), textcoords = 'offset points')
 
 ## draw convex hull
 tpr_fpr_points = np.array(tpr_fpr_points)
