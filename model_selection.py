@@ -6,6 +6,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.cross_validation import KFold
 from sklearn.utils import resample
 from sklearn.metrics import zero_one_loss
+from numpy import dtype
 
 def model_selection(clf, parameter, parameter_range): 
     fig, ax = plt.subplots(1, 1)
@@ -13,7 +14,7 @@ def model_selection(clf, parameter, parameter_range):
     ## generate dataset
     n_samples, n_centers = 10000, 10
     X, y = make_blobs(n_samples = n_samples, n_features = 2, centers = n_centers, random_state = 100)
-    # y = np.take([True, False], (y < 5))
+    y = np.take([True, False], (y < n_centers / 2))
     
     misclassify_rate_k_fold = []
     for k in parameter_range:
@@ -32,22 +33,56 @@ def model_selection(clf, parameter, parameter_range):
     ax.plot(parameter_range, misclassify_rate[:, 0], label = '10-fold validation mean')
     ax.plot(parameter_range, misclassify_rate[:, 1], label = '10-fold validation std')
 
-    misclassify_rate_bt = []
+    misclassify_rate_bt, biases, variences = [], [], []
     ## bootstraping
     for k in parameter_range:
         para = {parameter: k}
         clf.set_params(**para)
         scores = []
-        for i in xrange(0, 100):
-            X_train, y_train = resample(X, y)
-            clf.fit(X_train, y_train)
-            scores.append(zero_one_loss(y, clf.predict(X)))
+        n_replicas = 10
+        counts = np.zeros(X.shape[0], dtype = np.int64)
+        sum_preds = np.zeros(X.shape[0], dtype = np.float64)
+        for it in xrange(n_replicas):
+            # generate train sets and test sets
+            train_indices = np.random.randint(X.shape[0], size = X.shape[0])
+            
+            in_train = np.unique(train_indices)
+            mask = np.ones(X.shape[0], dtype = np.bool)
+            mask[in_train] = False
+            test_indices = np.arange(X.shape[0])[mask]
+            
+            clf.fit(X[train_indices], y[train_indices])
+            
+            scores.append(zero_one_loss(y[test_indices], clf.predict(X[test_indices])))
+            
+            preds = clf.predict(X)
+            for index in test_indices:
+                counts[index] += 1
+                sum_preds[index] += preds[index]
+        
+        mask = (counts == 0)
+        counts[mask] = 1 # avoid divide by 0
+        main_preds = np.round(sum_preds / counts)
+        
+        main_preds[mask] = y[mask] # not test once
+        
+        sample_bias = np.abs(y - main_preds)
+        sample_var = np.abs(sum_preds / counts - main_preds)
+        
+        bias = np.mean(sample_bias)
+        biases.append(bias)
+        u_var = np.sum(sample_var[sample_bias == 0]) / float(X.shape[0])
+        b_var = np.sum(sample_var[sample_bias != 0]) / float(X.shape[0])
+        var = u_var - b_var
+        variences.append(var)
         
         misclassify_rate_bt.append([np.mean(scores), np.std(scores)])
     
     misclassify_rate = np.array(misclassify_rate_bt, dtype = np.float64)
     ax.plot(parameter_range, misclassify_rate[:, 0], label = '100 boostraping mean')
     ax.plot(parameter_range, misclassify_rate[:, 1], label = '100 boostraping std')
+    ax.plot(parameter_range, biases, label = '100 boostraping bias')
+    ax.plot(parameter_range, variences, label = '100 boostraping variance')
     
     ax.set_ylim(0.0)
     ax.set_xlabel('k')
