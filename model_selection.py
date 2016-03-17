@@ -58,4 +58,4 @@ def model_selection(clf, parameter, parameter_range):
 
 if __name__ == '__main__':
     model_selection(KNeighborsClassifier(), 'n_neighbors', xrange(1, 50))
-    model_selection(DecisionTreeClassifier(), 'max_depth', xrange(3, 10))
+    model_selection(DecisionTreeClassifier(), 'max_depth', xrange(3, 10)) # max_leaf_nodes

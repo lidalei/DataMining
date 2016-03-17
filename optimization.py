@@ -39,10 +39,6 @@ for train_index, test_index in sss:
     # build a classifier
     clf_cart = DecisionTreeClassifier()
     ## random search with optimization with nested resampling
-    
-    
-    
-    ## random search with optimization without nested resampling
     # specify parameters and distributions to sample from
     param_distribution = {"max_depth": [3, None],
                   "max_features": sp_randint(1, len(attribute_names)),
@@ -50,10 +46,34 @@ for train_index, test_index in sss:
                   "min_samples_leaf": sp_randint(1, 11),
                   "criterion": ["gini", "entropy"]}
     # run randomized search
-    n_iter_search = 20
+    n_iter_search = 64
     random_search = RandomizedSearchCV(clf_cart, param_distributions = param_distribution,
                                        n_iter = n_iter_search)
     random_search.fit(X_train, y_train)
     print('Best estimator: %s'%random_search.best_estimator_)
+    # print('Grid_scores: %s'%random_search.grid_scores_)
+    print('Accuracy: %s'%accuracy_score(y_test, random_search.predict(X_test)))
+    
+    ## random search with optimization without nested resampling
+    # TODO, maybe manully set parameters to find the best
+    '''
+    # run randomized search
+    n_iter_search = 64
+    random_search = RandomizedSearchCV(DecisionTreeClassifier(),
+                        param_distributions = param_distribution, n_iter = n_iter_search)
+    random_search.fit(X_train, y_train)
+    print('Best estimator: %s'%random_search.best_estimator_)
     print('Grid_scores: %s'%random_search.grid_scores_)
     print('Accuracy: %s'%accuracy_score(y_test, random_search.predict(X_test)))
+    '''
+    # use a full grid over all parameters
+    param_grid = {"max_depth": [3, None],
+                  "max_features": [1, 3, 10],
+                  "min_samples_split": [1, 3, 10],
+                  "min_samples_leaf": [1, 3, 10],
+                  "criterion": ["gini", "entropy"]}
+    grid_search = GridSearchCV(DecisionTreeClassifier(), param_grid = param_grid)
+    grid_search.fit(X_train, y_train)
+    print('Best estimator: %s'%grid_search.best_estimator_)
+    # print('Grid_scores: %s'%grid_search.grid_scores_)
+    print('Accuracy: %s'%accuracy_score(y_test, grid_search.predict(X_test)))
