@@ -4,9 +4,7 @@ from sklearn.datasets import make_blobs
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.cross_validation import KFold
-from sklearn.utils import resample
 from sklearn.metrics import zero_one_loss
-from numpy import dtype
 
 def model_selection(clf, parameter, parameter_range): 
     fig, ax = plt.subplots(1, 1)
@@ -30,8 +28,10 @@ def model_selection(clf, parameter, parameter_range):
         misclassify_rate_k_fold.append([np.mean(scores), np.std(scores)])
     
     misclassify_rate = np.array(misclassify_rate_k_fold, dtype = np.float64)
-    ax.plot(parameter_range, misclassify_rate[:, 0], label = '10-fold validation mean')
-    ax.plot(parameter_range, misclassify_rate[:, 1], label = '10-fold validation std')
+    ax.plot(parameter_range, misclassify_rate[:, 0], 'o-', label = '10-fold validation mean')
+    # ax.plot(parameter_range, misclassify_rate[:, 1], label = '10-fold validation std')
+    # ax.fill_between(parameter_range, misclassify_rate[:, 0] - misclassify_rate[:, 1],
+                    # misclassify_rate[:, 0] + misclassify_rate[:, 1], alpha = 0.2, color = "r")
 
     misclassify_rate_bt, biases, variences = [], [], []
     ## bootstraping
@@ -39,7 +39,7 @@ def model_selection(clf, parameter, parameter_range):
         para = {parameter: k}
         clf.set_params(**para)
         scores = []
-        n_replicas = 10
+        n_replicas = 100
         counts = np.zeros(X.shape[0], dtype = np.int64)
         sum_preds = np.zeros(X.shape[0], dtype = np.float64)
         for it in xrange(n_replicas):
@@ -64,7 +64,7 @@ def model_selection(clf, parameter, parameter_range):
         counts[mask] = 1 # avoid divide by 0
         main_preds = np.round(sum_preds / counts)
         
-        main_preds[mask] = y[mask] # not test once
+        # main_preds[mask] = y[mask] # not test
         
         sample_bias = np.abs(y - main_preds)
         sample_var = np.abs(sum_preds / counts - main_preds)
@@ -79,10 +79,12 @@ def model_selection(clf, parameter, parameter_range):
         misclassify_rate_bt.append([np.mean(scores), np.std(scores)])
     
     misclassify_rate = np.array(misclassify_rate_bt, dtype = np.float64)
-    ax.plot(parameter_range, misclassify_rate[:, 0], label = '100 boostraping mean')
-    ax.plot(parameter_range, misclassify_rate[:, 1], label = '100 boostraping std')
-    ax.plot(parameter_range, biases, label = '100 boostraping bias')
-    ax.plot(parameter_range, variences, label = '100 boostraping variance')
+    ax.plot(parameter_range, misclassify_rate[:, 0], 'o-', label = '100 boostraping mean')
+    # ax.fill_between(parameter_range, misclassify_rate[:, 0] - misclassify_rate[:, 1],
+                # misclassify_rate[:, 0] + misclassify_rate[:, 1], alpha=0.2, color="g")
+    # ax.plot(parameter_range, misclassify_rate[:, 1], label = '100 boostraping std')
+    ax.plot(parameter_range, biases, 'o-', label = '100 boostraping bias')
+    ax.plot(parameter_range, variences, 'o-', label = '100 boostraping variance')
     
     ax.set_ylim(0.0)
     ax.set_xlabel('k')
