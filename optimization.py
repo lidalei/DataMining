@@ -3,10 +3,11 @@ from scipy.io.arff import loadarff
 import os
 import numpy as np
 import matplotlib.pylab as plt
-from sklearn.cross_validation import KFold, StratifiedShuffleSplit
+from sklearn.base import clone
+from sklearn.cross_validation import StratifiedShuffleSplit
 from sklearn.tree import DecisionTreeClassifier
 from scipy.stats import randint as sp_randint
-from sklearn.grid_search import GridSearchCV, RandomizedSearchCV
+from sklearn.grid_search import GridSearchCV, RandomizedSearchCV, ParameterSampler
 from sklearn.metrics import zero_one_loss, accuracy_score, confusion_matrix
 import itertools
 import seaborn
@@ -55,22 +56,28 @@ for train_index, test_index in sss:
     print('Accuracy: %s'%accuracy_score(y_test, random_search.predict(X_test)))
     
     ## random search with optimization without nested resampling
-    # TODO, maybe manully set parameters to find the best
-    '''
-    # run randomized search
-    n_iter_search = 64
-    random_search = RandomizedSearchCV(DecisionTreeClassifier(),
-                        param_distributions = param_distribution, n_iter = n_iter_search)
-    random_search.fit(X_train, y_train)
-    print('Best estimator: %s'%random_search.best_estimator_)
-    print('Grid_scores: %s'%random_search.grid_scores_)
-    print('Accuracy: %s'%accuracy_score(y_test, random_search.predict(X_test)))
-    '''
+    clf = DecisionTreeClassifier()
+    param_list = ParameterSampler(param_distribution, n_iter = n_iter_search)
+    max_accuracy, opt_paras_index = 0.0, 0
+    opt_clf = None
+    for index, params in enumerate(param_list):
+        clf.set_params(**params)
+        clf.fit(X_train, y_train)
+        clf_accuracy = accuracy_score(y_train, clf.predict(X_train))
+        if clf_accuracy > max_accuracy:
+            max_accuracy = clf_accuracy
+            optimal_paras_index = index
+            opt_clf = clone(clf)
+    
+    print('Best estimator: %s'%opt_clf)
+    print('Accuracy: %s'%accuracy_score(y_test, opt_clf.fit(X_train, y_train).predict(X_test)))
+    
+    ## grid search
     # use a full grid over all parameters
     param_grid = {"max_depth": [3, None],
-                  "max_features": [1, 3, 10],
-                  "min_samples_split": [1, 3, 10],
-                  "min_samples_leaf": [1, 3, 10],
+                  "max_features": [1, 3, 6, 10],
+                  "min_samples_split": [1, 3, 6, 10],
+                  "min_samples_leaf": [1, 3, 6, 10],
                   "criterion": ["gini", "entropy"]}
     grid_search = GridSearchCV(DecisionTreeClassifier(), param_grid = param_grid)
     grid_search.fit(X_train, y_train)
