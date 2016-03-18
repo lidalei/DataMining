@@ -42,10 +42,10 @@ for train_index, test_index in sss:
     ## random search with optimization with nested resampling
     # specify parameters and distributions to sample from
     param_distribution = {"max_depth": [3, None],
-                  "max_features": sp_randint(1, len(attribute_names)),
-                  "min_samples_split": sp_randint(1, 11),
-                  "min_samples_leaf": sp_randint(1, 11),
-                  "criterion": ["gini", "entropy"]}
+                          "max_features": sp_randint(1, len(attribute_names)),
+                          "min_samples_split": sp_randint(1, 11),
+                          "min_samples_leaf": sp_randint(1, 11),
+                          "criterion": ["gini", "entropy"]}
     # run randomized search
     n_iter_search = 64
     random_search = RandomizedSearchCV(clf_cart, param_distributions = param_distribution,
