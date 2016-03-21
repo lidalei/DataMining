@@ -6,11 +6,32 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.cross_validation import KFold
 from sklearn.metrics import zero_one_loss
 
+
+def bias_var(true_preds, sum_preds, counts):
+    '''
+    compute bias and variance
+    @param true_preds: true labels
+    @param sum_preds: array of summation of the predictions of each sample
+    @param counts: the times each sample is tested (predicted)
+    @return: bias, variance
+    '''
+    main_preds = np.round(sum_preds / counts)    
+    sample_bias = np.abs(true_preds - main_preds)
+    sample_var = np.abs(sum_preds / counts - main_preds)
+    
+    bias = np.mean(sample_bias)
+    u_var = np.sum(sample_var[sample_bias == 0]) / float(true_preds.shape[0])
+    b_var = np.sum(sample_var[sample_bias != 0]) / float(true_preds.shape[0])
+    var = u_var - b_var
+    
+    return bias, var
+
+
 def model_selection(clf, parameter, parameter_range): 
     fig, ax = plt.subplots(1, 1)
     
     ## generate dataset
-    n_samples, n_centers = 10000, 10
+    n_samples, n_centers = 1000, 10
     X, y = make_blobs(n_samples = n_samples, n_features = 2, centers = n_centers, random_state = 100)
     y = np.take([True, False], (y < n_centers / 2))
     
@@ -39,13 +60,13 @@ def model_selection(clf, parameter, parameter_range):
         para = {parameter: k}
         clf.set_params(**para)
         scores = []
-        n_replicas = 100
+        n_replicas = 80
         counts = np.zeros(X.shape[0], dtype = np.int64)
         sum_preds = np.zeros(X.shape[0], dtype = np.float64)
         for it in xrange(n_replicas):
             # generate train sets and test sets
             train_indices = np.random.randint(X.shape[0], size = X.shape[0])
-            
+            # get test sets
             in_train = np.unique(train_indices)
             mask = np.ones(X.shape[0], dtype = np.bool)
             mask[in_train] = False
@@ -60,20 +81,9 @@ def model_selection(clf, parameter, parameter_range):
                 counts[index] += 1
                 sum_preds[index] += preds[index]
         
-        mask = (counts == 0)
-        counts[mask] = 1 # avoid divide by 0
-        main_preds = np.round(sum_preds / counts)
-        
-        # main_preds[mask] = y[mask] # not test
-        
-        sample_bias = np.abs(y - main_preds)
-        sample_var = np.abs(sum_preds / counts - main_preds)
-        
-        bias = np.mean(sample_bias)
+        test_mask = (counts > 0) # indices of samples that have been tested
+        bias, var = bias_var(y[test_mask], sum_preds[test_mask], counts[test_mask])
         biases.append(bias)
-        u_var = np.sum(sample_var[sample_bias == 0]) / float(X.shape[0])
-        b_var = np.sum(sample_var[sample_bias != 0]) / float(X.shape[0])
-        var = u_var - b_var
         variences.append(var)
         
         misclassify_rate_bt.append([np.mean(scores), np.std(scores)])
@@ -86,6 +96,7 @@ def model_selection(clf, parameter, parameter_range):
     ax.plot(parameter_range, biases, 'o-', label = '100 boostraping bias')
     ax.plot(parameter_range, variences, 'o-', label = '100 boostraping variance')
     
+    ax.grid(True)
     ax.set_ylim(0.0)
     ax.set_xlabel('k')
     ax.set_ylabel('Misclassification rate')
