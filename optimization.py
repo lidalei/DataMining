@@ -36,7 +36,7 @@ def random_search_cv(clf, param_distribution, n_iter_search, X_train, y_train):
     @return: random search object
     '''
     rnd_search = RandomizedSearchCV(clf, param_distributions = param_distribution,
-                                    n_iter = n_iter_search, cv = 10)
+                                    n_iter = n_iter_search, cv = 10,  pre_dispatch = '2*n_jobs', n_jobs = 4)
     rnd_search.fit(X_train, y_train)
     
     return rnd_search
@@ -106,7 +106,7 @@ if __name__ == '__main__':
                           "min_samples_leaf": np.linspace(1, 100, num = grid_den, dtype = np.int32),
                           "min_samples_split": np.linspace(1, 100, num = grid_den, dtype = np.int32)}
             
-            grid_search = GridSearchCV(clf_cart, param_grid = param_grid, cv = 10)
+            grid_search = GridSearchCV(clf_cart, param_grid = param_grid, cv = 10, pre_dispatch = '2*n_jobs', n_jobs = 4)
             grid_search.fit(X_train, y_train)
             grid_search_performances[index, 0] = grid_search.best_score_
             grid_search_performances[index, 1] = accuracy_score(y_test, grid_search.predict(X_test))
