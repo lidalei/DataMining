@@ -119,8 +119,8 @@ if __name__ == '__main__':
         ax.plot(rnd_search_iter_times, grid_search_performances[:, 1], label = 'Grid search test accuracy')
         
         ax.set_title('Random search vs. grid search', fontsize = 'large')
-        ax.xlabel('Number of search', fontsize = 'medium')
-        ax.ylabel('Accuracy', fontsize = 'medium')
+        ax.set_xlabel('Number of search', fontsize = 'medium')
+        ax.set_ylabel('Accuracy', fontsize = 'medium')
         ax.legend(loc = 'best', fontsize = 'medium')
         
         plt.show()
