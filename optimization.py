@@ -38,10 +38,10 @@ for train_index, test_index in sss:
     X_train, X_test = X[train_index], X[test_index]
     y_train, y_test = y[train_index], y[test_index]
     # build a classifier
-    clf_cart = DecisionTreeClassifier()
+    clf_cart = DecisionTreeClassifier(class_weight = 'balanced')
     ## random search with optimization with nested resampling
     # specify parameters and distributions to sample from
-    param_distribution = {"max_depth": [3, None],
+    param_distribution = {"max_depth": [3, 5, 7, 9, None],
                           "max_features": sp_randint(1, len(attribute_names)),
                           "min_samples_split": sp_randint(1, 11),
                           "min_samples_leaf": sp_randint(1, 11),
@@ -52,11 +52,11 @@ for train_index, test_index in sss:
                                        n_iter = n_iter_search)
     random_search.fit(X_train, y_train)
     print('Best estimator: %s'%random_search.best_estimator_)
-    # print('Grid_scores: %s'%random_search.grid_scores_)
+    print('Best score: %s'%random_search.best_score_)
     print('Accuracy: %s'%accuracy_score(y_test, random_search.predict(X_test)))
     
     ## random search with optimization without nested resampling
-    clf = DecisionTreeClassifier()
+    clf = DecisionTreeClassifier(class_weight = 'balanced')
     param_list = ParameterSampler(param_distribution, n_iter = n_iter_search)
     max_accuracy, opt_paras_index = 0.0, 0
     opt_clf = None
@@ -70,6 +70,7 @@ for train_index, test_index in sss:
             opt_clf = clone(clf)
     
     print('Best estimator: %s'%opt_clf)
+    print('Best score: %s'%max_accuracy)
     print('Accuracy: %s'%accuracy_score(y_test, opt_clf.fit(X_train, y_train).predict(X_test)))
     
     ## grid search
@@ -79,8 +80,8 @@ for train_index, test_index in sss:
                   "min_samples_split": [1, 3, 6, 10],
                   "min_samples_leaf": [1, 3, 6, 10],
                   "criterion": ["gini", "entropy"]}
-    grid_search = GridSearchCV(DecisionTreeClassifier(), param_grid = param_grid)
+    grid_search = GridSearchCV(DecisionTreeClassifier(class_weight = 'balanced'), param_grid = param_grid)
     grid_search.fit(X_train, y_train)
     print('Best estimator: %s'%grid_search.best_estimator_)
-    # print('Grid_scores: %s'%grid_search.grid_scores_)
+    print('Best score: %s'%grid_search.best_score_)
     print('Accuracy: %s'%accuracy_score(y_test, grid_search.predict(X_test)))
