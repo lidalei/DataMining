@@ -60,7 +60,7 @@ def model_selection(clf, parameter, parameter_range):
         para = {parameter: k}
         clf.set_params(**para)
         scores = []
-        n_replicas = 80
+        n_replicas = 100
         counts = np.zeros(X.shape[0], dtype = np.int64)
         sum_preds = np.zeros(X.shape[0], dtype = np.float64)
         for it in xrange(n_replicas):
@@ -106,4 +106,4 @@ def model_selection(clf, parameter, parameter_range):
 
 if __name__ == '__main__':
     model_selection(KNeighborsClassifier(), 'n_neighbors', xrange(1, 50))
-    model_selection(DecisionTreeClassifier(), 'max_depth', xrange(1, 20)) # max_leaf_nodes
+    model_selection(DecisionTreeClassifier(), 'max_depth', xrange(1, 10)) # max_leaf_nodes
