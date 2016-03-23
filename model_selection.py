@@ -98,12 +98,12 @@ def model_selection(clf, parameter, parameter_range):
     
     ax.grid(True)
     ax.set_ylim(0.0)
-    ax.set_xlabel('k')
-    ax.set_ylabel('Misclassification rate')
+    ax.set_xlabel(parameter, fontsize = 'medium')
+    ax.set_ylabel('Misclassification rate', fontsize = 'medium')
     ax.legend(loc = 'best', fontsize = 'medium')
     
     plt.show()
 
 if __name__ == '__main__':
     model_selection(KNeighborsClassifier(), 'n_neighbors', xrange(1, 50))
-    model_selection(DecisionTreeClassifier(), 'max_depth', xrange(3, 10)) # max_leaf_nodes
+    model_selection(DecisionTreeClassifier(), 'max_depth', xrange(1, 20)) # max_leaf_nodes
