@@ -36,7 +36,7 @@ def random_search_cv(clf, param_distribution, n_iter_search, X_train, y_train):
     @return: random search object
     '''
     rnd_search = RandomizedSearchCV(clf, param_distributions = param_distribution,
-                                    n_iter = n_iter_search)
+                                    n_iter = n_iter_search, cv = 10)
     rnd_search.fit(X_train, y_train)
     
     return rnd_search
@@ -89,7 +89,7 @@ if __name__ == '__main__':
         print('Best score: %s'%best_score)
         print('Accuracy: %s'%accuracy_score(y_test, best_clf.predict(X_test)))
 
-        ## compare random search with grid search
+        ## compare random search (cv) with grid search
         grid_dens = xrange(2, 10) # number of samples in each dimension
         rnd_search_iter_times = [i ** 3 for i in grid_dens]
         rnd_search_performances = np.zeros((len(grid_dens), 2), dtype = np.float32)
@@ -106,18 +106,19 @@ if __name__ == '__main__':
                           "min_samples_leaf": np.linspace(1, 100, num = grid_den, dtype = np.int32),
                           "min_samples_split": np.linspace(1, 100, num = grid_den, dtype = np.int32)}
             
-            grid_search = GridSearchCV(clf_cart, param_grid = param_grid)
+            grid_search = GridSearchCV(clf_cart, param_grid = param_grid, cv = 10)
             grid_search.fit(X_train, y_train)
             grid_search_performances[index, 0] = grid_search.best_score_
             grid_search_performances[index, 1] = accuracy_score(y_test, grid_search.predict(X_test))
         
         ## plot comparison between random search and grid search
         fig, ax = plt.subplots(1, 1)
-        ax.plot(rnd_search_iter_times, rnd_search_performances[:, 0], label = 'Random search training accuracy')
-        ax.plot(rnd_search_iter_times, rnd_search_performances[:, 1], label = 'Random search test accuracy')
-        ax.plot(rnd_search_iter_times, grid_search_performances[:, 0], label = 'Grid search training accuracy')
-        ax.plot(rnd_search_iter_times, grid_search_performances[:, 1], label = 'Grid search test accuracy')
+        ax.plot(rnd_search_iter_times, rnd_search_performances[:, 0], 'o-', label = 'Random search training accuracy')
+        ax.plot(rnd_search_iter_times, rnd_search_performances[:, 1], 'o-', label = 'Random search test accuracy')
+        ax.plot(rnd_search_iter_times, grid_search_performances[:, 0], '+-', label = 'Grid search training accuracy')
+        ax.plot(rnd_search_iter_times, grid_search_performances[:, 1], '+-', label = 'Grid search test accuracy')
         
+        ax.grid(True)
         ax.set_title('Random search vs. grid search', fontsize = 'large')
         ax.set_xlabel('Number of search', fontsize = 'medium')
         ax.set_ylabel('Accuracy', fontsize = 'medium')
