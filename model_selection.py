@@ -31,7 +31,7 @@ def model_selection(clf, parameter, parameter_range):
     fig, ax = plt.subplots(1, 1)
     
     ## generate dataset
-    n_samples, n_centers = 1000, 10
+    n_samples, n_centers = 10000, 10
     X, y = make_blobs(n_samples = n_samples, n_features = 2, centers = n_centers, random_state = 100)
     y = np.take([True, False], (y < n_centers / 2))
     
@@ -106,4 +106,4 @@ def model_selection(clf, parameter, parameter_range):
 
 if __name__ == '__main__':
     model_selection(KNeighborsClassifier(), 'n_neighbors', xrange(1, 50))
-    model_selection(DecisionTreeClassifier(), 'max_depth', xrange(1, 10)) # max_leaf_nodes
+    model_selection(DecisionTreeClassifier(), 'max_depth', xrange(3, 10)) # or max_leaf_nodes

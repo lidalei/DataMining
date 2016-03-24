@@ -36,7 +36,7 @@ def random_search_cv(clf, param_distribution, n_iter_search, X_train, y_train):
     @return: random search object
     '''
     rnd_search = RandomizedSearchCV(clf, param_distributions = param_distribution,
-                                    n_iter = n_iter_search, cv = 10,  pre_dispatch = '2*n_jobs', n_jobs = 4)
+                                    n_iter = n_iter_search, pre_dispatch = '2*n_jobs', n_jobs = 4)
     rnd_search.fit(X_train, y_train)
     
     return rnd_search
@@ -71,9 +71,9 @@ if __name__ == '__main__':
         # build a classifier
         clf_cart = DecisionTreeClassifier(class_weight = 'balanced')
         # specify parameters and distributions to sample from
-        param_distribution = {"max_depth": sp_randint(1, 100),
-                              "min_samples_leaf": sp_randint(1, 100),
-                              "min_samples_split": sp_randint(1, 100)}
+        param_distribution = {"max_depth": sp_randint(1, 50),
+                              "min_samples_leaf": sp_randint(1, 50),
+                              "min_samples_split": sp_randint(1, 50)}
         # runs of randomized search
         n_iter_search = 64
 
@@ -90,7 +90,7 @@ if __name__ == '__main__':
         print('Accuracy: %s'%accuracy_score(y_test, best_clf.predict(X_test)))
 
         ## compare random search (cv) with grid search
-        grid_dens = xrange(2, 10) # number of samples in each dimension
+        grid_dens = xrange(2, 20) # number of samples in each dimension
         rnd_search_iter_times = [i ** 3 for i in grid_dens]
         rnd_search_performances = np.zeros((len(grid_dens), 2), dtype = np.float32)
         grid_search_performances = np.zeros((len(grid_dens), 2), dtype = np.float32)
@@ -102,11 +102,11 @@ if __name__ == '__main__':
             
             ## grid search
             # use a full grid over all parameters
-            param_grid = {"max_depth": np.linspace(1, 100, num = grid_den, dtype = np.int32),
-                          "min_samples_leaf": np.linspace(1, 100, num = grid_den, dtype = np.int32),
-                          "min_samples_split": np.linspace(1, 100, num = grid_den, dtype = np.int32)}
+            param_grid = {"max_depth": np.linspace(1, 50, num = grid_den, dtype = np.int32),
+                          "min_samples_leaf": np.linspace(1, 50, num = grid_den, dtype = np.int32),
+                          "min_samples_split": np.linspace(1, 50, num = grid_den, dtype = np.int32)}
             
-            grid_search = GridSearchCV(clf_cart, param_grid = param_grid, cv = 10, pre_dispatch = '2*n_jobs', n_jobs = 4)
+            grid_search = GridSearchCV(clf_cart, param_grid = param_grid, pre_dispatch = '2*n_jobs', n_jobs = 4)
             grid_search.fit(X_train, y_train)
             grid_search_performances[index, 0] = grid_search.best_score_
             grid_search_performances[index, 1] = accuracy_score(y_test, grid_search.predict(X_test))
