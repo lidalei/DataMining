@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pylab as plt
 from sklearn.datasets import make_blobs
 from sklearn.svm import SVC
-from sklearn.cross_validation import KFold, cross_val_score
+from sklearn.cross_validation import cross_val_score
 from sklearn.metrics import get_scorer
 
 

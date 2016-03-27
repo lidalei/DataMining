@@ -6,8 +6,6 @@ import matplotlib.pylab as plt
 from matplotlib.ticker import FormatStrFormatter
 from sklearn.grid_search import GridSearchCV
 from sklearn.svm import SVC
-from sklearn.cross_validation import KFold, cross_val_score, StratifiedShuffleSplit
-from sklearn.metrics import get_scorer
 
 def get_dataset(did):
     home_dir = os.path.expanduser("~")
