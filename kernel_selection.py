@@ -18,7 +18,7 @@ def plot_svm(ax, clf, X, y):
         z = clf.predict_proba(np.c_[xx.ravel(), yy.ravel()])[:, 1]
     # Put the result into a color plot 
     z = z.reshape(xx.shape)
-    ax.contourf(xx, yy, z, cmap = plt.cm.RdBu_r, alpha = 0.8)
+    ax.contourf(xx, yy, z, cmap = 'RdBu', alpha = 0.8)
     ax.scatter(X[:, 0], X[:, 1], c = y)
 
 if __name__ == '__main__':
