@@ -9,8 +9,10 @@ linear_svm = SVC(kernel = 'linear', C = 2 ** 15)
 linear_svm.fit(X, y)
 ## w0 * X_1 + w1 * X_2 + b = 0 <=> X_2 = -w0 / w1 * X_1 - b / w1
 w = linear_svm.coef_[0]
+print('w: {}'.format(w))
 print('Margin: %s'%(1.0 / np.linalg.norm(w)))
 b = linear_svm.intercept_
+print('b: {}'.format(b))
 slope = -w[0] / w[1]
 ## points in the separating line
 xx = np.linspace(np.amin(X[:, 0]), np.amax(X[:, 0]))
