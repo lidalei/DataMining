@@ -26,15 +26,20 @@ ax.set_title('Maximal margin classifier')
 # draw points
 ax.scatter(X[:, 0], X[:, 1], c = y)
 # draw separating line
-ax.plot(xx, yy, 'k-')
+ax.plot(xx, yy, 'r-', label = 'Maximal margin classifier')
 # draw gutters
-ax.plot(xx, yy_top, 'k--')
-ax.plot(xx, yy_bottom, 'k--')
+ax.plot(xx, yy_top, 'g--', label = 'Red margin line')
+ax.plot(xx, yy_bottom, 'b--', label = 'Blue margin line')
 # draw support vectors
 ax.scatter(linear_svm.support_vectors_[:, 0], linear_svm.support_vectors_[:, 1],
-           s = 100, facecolors = 'none')
+           s = 100, facecolors = 'none', label = 'Support vectors')
+
+if True:
+    ax.scatter([2.], [3.], marker = '^', c = ['Blue'], label = 'Additional observation')
+    
 # set labels
 ax.set_xlabel('X_1')
 ax.set_ylabel('X_2')
+ax.legend(loc = 'best', fontsize = 'medium', scatterpoints = 1)
 
 plt.show()
