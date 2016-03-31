@@ -1,55 +1,74 @@
 import numpy as np
-import matplotlib.pylab as plt
-from sklearn.datasets import make_blobs
-from sklearn.svm import SVC
-from sklearn.cross_validation import cross_val_score
-from sklearn.metrics import get_scorer
+from sklearn.datasets.samples_generator import make_blobs
+from sklearn import *
+from sklearn.decomposition.tests.test_nmf import random_state
+import matplotlib.pyplot as plt
+from IPython.core.pylabtools import figsize
+from sklearn.cross_validation import KFold
+from sklearn.metrics import zero_one_loss
+from sklearn.metrics.scorer import roc_auc_scorer, get_scorer
+from sklearn import svm
 
-
-def plot_svm(ax, clf, X, y):
-    h = 0.02  # step size in the mesh
-    # create a mesh to plot in
-    X_min, X_max = X[:, 0].min() - 1, X[:, 0].max() + 1
-    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-    xx, yy = np.meshgrid(np.arange(X_min, X_max, h), np.arange(y_min, y_max, h))
-    if hasattr(clf, "decision_function"):
-        z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
-    else:
-        z = clf.predict_proba(np.c_[xx.ravel(), yy.ravel()])[:, 1]
-    # Put the result into a color plot 
-    z = z.reshape(xx.shape)
-    ax.contourf(xx, yy, z, cmap = 'RdBu', alpha = 0.8)
-    ax.scatter(X[:, 0], X[:, 1], c = y)
-
-if __name__ == '__main__':
-    # generate data
-    n_samples, n_features, centers = 1000, 2, 2
-    X, y = make_blobs(n_samples, n_features, centers, random_state = 100)
+if __name__ == "__main__":
+    X , y = make_blobs(n_samples = 1000, centers = 10, random_state=123)
+    y = np.take([True, False], (y < 5))
     
-    # set canvas
-    fig, ax = plt.subplots(1, 1)
-    # ax.scatter(X[:, 0], X[:, 1], c = y)
+    lin_svc = svm.SVC(C=1.0, cache_size=200, class_weight=None, coef0=0.0,
+                  decision_function_shape=None, degree=3, gamma='auto', kernel='linear',
+                  max_iter=-1, probability=False, random_state=None, shrinking=True,
+                  tol=0.001,verbose=False)
+    rbf_svc = svm.SVC(C=1.0, kernel='rbf', gamma=0.7)
+    poly_svc = svm.SVC(C=1.0, kernel='poly', degree=3)
     
-    # SVMs
-    linear_svm = SVC(kernel = 'linear')
-    poly_svm = SVC(kernel = 'poly')
-    rbf_svm = SVC(kernel = 'rbf')
-    linear_svm.fit(X, y)
-    poly_svm.fit(X, y)
-    rbf_svm.fit(X, y)
-    
-    # plot the decision boundary
-    plot_svm(ax, rbf_svm, X, y)
-    
-    # compute performance with cross validation
-    linear_svm_scores = cross_val_score(linear_svm, X, y, cv = 10, n_jobs = -1)
-    poly_svm_scores = cross_val_score(poly_svm, X, y, cv = 10, n_jobs = -1)
-    rbf_svm_scores = cross_val_score(rbf_svm, X, y, cv = 10, n_jobs = -1)
-    # compute performance with AUC
+    #palette = itertools.cycle(seaborn.color_palette(n_colors = 10))
+    scores_lin = []
+    scores_rbf = []
+    scores_poly = []
+    lin_roc_auc_scorer = []
+    rbf_roc_auc_scorer = []
+    poly_roc_auc_scorer = []
     roc_auc_scorer = get_scorer("roc_auc")
+    for train, test in KFold(n=len(X), n_folds=10, random_state=42):
+        X_train, y_train = X[train], y[train]
+        X_test, y_test = X[test], y[test]
+        lin_clf = lin_svc.fit(X_train, y_train)
+        rbf_clf = rbf_svc.fit(X_train, y_train)
+        poly_clf = poly_svc.fit(X_train, y_train)
+        scores_lin.append(zero_one_loss((y_test),lin_clf.predict(X_test)))
+        scores_rbf.append(zero_one_loss((y_test),rbf_clf.predict(X_test)))
+        scores_poly.append(zero_one_loss((y_test),poly_clf.predict(X_test)))
+        lin_roc_auc_scorer.append(roc_auc_scorer(lin_clf, X_test, y_test))
+        rbf_roc_auc_scorer.append(roc_auc_scorer(rbf_clf, X_test, y_test))
+        poly_roc_auc_scorer.append(roc_auc_scorer(poly_clf, X_test, y_test))       
+         
+#     print ("linear error = %f +-%f" %(np.mean(scores_lin), np.std(scores_lin)))
+#     print ("RBF error = %f +-%f" %(np.mean(scores_rbf), np.std(scores_rbf)))       
+#     print ("Polynomial error = %f +-%f" %(np.mean(scores_poly), np.std(scores_poly)))
+    print ("linear AUC = %f +-%f " %(np.mean(lin_roc_auc_scorer), np.std(lin_roc_auc_scorer)))
+    print ("RBF AUC = %f +-%f" %(np.mean(rbf_roc_auc_scorer),np.std(rbf_roc_auc_scorer)))       
+    print ("Polynomial AUC = %f +-%f" %(np.mean(poly_roc_auc_scorer),np.std(poly_roc_auc_scorer)))
     
-    linear_svm_AUC = roc_auc_scorer(linear_svm, X, y)
-    poly_svm_AUC = roc_auc_scorer(poly_svm, X, y)
-    rbf_svm_AUC = roc_auc_scorer(rbf_svm, X, y)
+    h = 0.2
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+    titles = ['SVC with linear kernal',
+              'SVC with RBF kernal',
+              'SVC with polynomial kernel']
+    
+    plt.subplots(figsize=(20,10))
+    for i, clf in enumerate((lin_svc.fit(X, y), rbf_svc.fit(X, y), poly_svc.fit(X, y))):
+        plt.subplot(2, 2, i+1)
+        plt.subplots_adjust(wspace=0.1, hspace=0.1)
+        Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+        plt.contourf(xx, yy, Z, cmap=plt.cm.Paired, alpha=0.8)
+        plt.scatter(X[:,0], X[:,1], c=y, cmap=plt.cm.Paired)
+        plt.xlim(xx.min(), xx.max())
+        plt.ylim(yy.min(), yy.max())
+        plt.xticks(())
+        plt.yticks(())
+        plt.title(titles[i])
         
     plt.show()
