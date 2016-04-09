@@ -23,7 +23,7 @@ def plot_surface(ax, clf, X, y):
 if __name__ == '__main__':
     X, y = make_moons(n_samples = 200, random_state = 100)
     
-    ns = np.logspace(1, 8, 8, endpoint = True, base = 2.0, dtype = np.int32)
+    ns = np.logspace(0, 7, 8, endpoint = True, base = 2.0, dtype = np.int32)
     fig, axes = plt.subplots(2, ns.size / 2)
     axes = np.reshape(axes, ns.size)
     
@@ -34,7 +34,3 @@ if __name__ == '__main__':
         plot_surface(ax, ensemble_clf, X, y)
     
     plt.show()
-    
-    
-    
-    
