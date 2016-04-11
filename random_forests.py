@@ -29,7 +29,7 @@ def get_dataset(did):
     
     return X, y, attribute_names, target_attribute_names
 
-def bias_var(true_preds, sum_preds, counts):
+def bias_var(true_preds, sum_preds, counts, n_replicas):
     '''
     compute bias and variance
     @param true_preds: true labels
@@ -37,32 +37,48 @@ def bias_var(true_preds, sum_preds, counts):
     @param counts: the times each sample is tested (predicted)
     @return: bias, variance
     '''
-    main_preds = np.round(sum_preds / counts)    
-    sample_bias = np.abs(true_preds - main_preds)
-    sample_var = np.abs(sum_preds / counts - main_preds)
+    sample_bias = np.absolute(true_preds - sum_preds / counts)
+    sample_var = sample_bias * (1.0 - sample_bias)
     
-    bias = np.mean(sample_bias)
-    u_var = np.sum(sample_var[sample_bias == 0]) / float(true_preds.shape[0])
-    b_var = np.sum(sample_var[sample_bias != 0]) / float(true_preds.shape[0])
-    var = u_var - b_var
+    weighted_sample_bias_2 = np.power(sample_bias, 2.0) * counts / n_replicas
+    weighted_sample_var = sample_var * counts / n_replicas
+    bias = np.mean(weighted_sample_bias_2)
+    var = np.mean(weighted_sample_var)
     
     return bias, var
 
-def plot_surface(ax, clf, X, y):
-    h = 0.02  # step size in the mesh
-    # create a mesh to plot in
-    X_min, X_max = X[:, 0].min() - 1, X[:, 0].max() + 1
-    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-    xx, yy = np.meshgrid(np.arange(X_min, X_max, h), np.arange(y_min, y_max, h))
-    if hasattr(clf, "decision_function"):
-        z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
-    else:
-        z = clf.predict_proba(np.c_[xx.ravel(), yy.ravel()])[:, 1]
-    # Put the result into a color plot 
-    z = z.reshape(xx.shape)
-    ax.contourf(xx, yy, z, cmap = plt.cm.RdBu_r, alpha = 0.8)
-    ax.scatter(X[:, 0], X[:, 1], c = y)
+def clf_bias_var(clf, X, y, n_replicas):
+    roc_auc_scorer = get_scorer("roc_auc")
+    # roc_auc_scorer(clf, X_test, y_test)
+    auc_scores = []
+    error_scores = []
+    counts = np.zeros(X.shape[0], dtype = np.int64)
+    sum_preds = np.zeros(X.shape[0], dtype = np.float64)
+    for it in xrange(n_replicas):
+        # generate train sets and test sets
+        train_indices = np.random.randint(X.shape[0], size = X.shape[0])
+        # get test sets
+        in_train = np.unique(train_indices)
+        mask = np.ones(X.shape[0], dtype = np.bool)
+        mask[in_train] = False
+        test_indices = np.arange(X.shape[0])[mask]
+        
+        clf.fit(X[train_indices], y[train_indices])
+        
+        auc_scores.append(roc_auc_scorer(clf, X[test_indices], y[test_indices]))
+        error_scores.append(zero_one_loss(y[test_indices], clf.predict(X[test_indices])))
+               
+        preds = clf.predict(X)
+        for index in test_indices:
+            counts[index] += 1
+            sum_preds[index] += preds[index]
     
+    test_mask = (counts > 0) # indices of samples that have been tested
+    
+    bias, var = bias_var(y[test_mask], sum_preds[test_mask], counts[test_mask], n_replicas)
+    
+    return auc_scores, error_scores, bias, var
+
 if __name__ == '__main__':
     ## get dataset
     X, y, attribute_names, target_attribute_names = get_dataset(44)
@@ -95,46 +111,34 @@ if __name__ == '__main__':
     ax2.legend(loc = 'best', fontsize = 'medium')
     ax2.set_xlabel('Number of base classifiers')
     
-    ## compare a single tree with RandomForest ensemble, using 100 bootstraping
-    roc_auc_scorer = get_scorer("roc_auc")
-    # roc_auc_scorer(clf, X_test, y_test)
-    
-    
-    # compute bias and variance for a tree
-    auc_scores = []
-    error_scores = []
+    ## compare a single tree with RandomForest ensemble, using 100 bootstrap
+    figure, ax = plt.subplots(1, 1)
     n_replicas = 100
-    counts = np.zeros(X.shape[0], dtype = np.int64)
-    sum_preds = np.zeros(X.shape[0], dtype = np.float64)
-    for it in xrange(n_replicas):
-        # generate train sets and test sets
-        train_indices = np.random.randint(X.shape[0], size = X.shape[0])
-        # get test sets
-        in_train = np.unique(train_indices)
-        mask = np.ones(X.shape[0], dtype = np.bool)
-        mask[in_train] = False
-        test_indices = np.arange(X.shape[0])[mask]
-        
-        cart = DecisionTreeClassifier()
-        
-        cart.fit(X[train_indices], y[train_indices])
-        
-        auc_scores.append(roc_auc_scorer(cart, X[test_indices], y[test_indices]))
-        error_scores.append(zero_one_loss(y[test_indices], cart.predict(X[test_indices])))
-        
-        preds = cart.predict(X)
-        for index in test_indices:
-            counts[index] += 1
-            sum_preds[index] += preds[index]
-    
-    test_mask = (counts > 0) # indices of samples that have been tested
-    bias, var = bias_var(y[test_mask], sum_preds[test_mask], counts[test_mask])
-    
+    # compute bias and variance for a tree
+    cart = DecisionTreeClassifier()
+    auc_scores, error_scores, bias, var = clf_bias_var(cart, X, y, n_replicas)
     print('auc mean: {}, std: {}'.format(np.mean(auc_scores), np.std(auc_scores)))
     print('error mean: {}, std: {}'.format(np.mean(error_scores), np.std(error_scores)))
     print('bias: {}, var: {}'.format(bias, var))
-    '''
+    
+    #ax.plot(ns[[0, -1]], [bias, bias], '--', label = 'CART bias')
+    ax.plot(ns[[0, -1]], [var, var], '--', label = 'CART variance')
+    
+    biases_vars = []
+    rnd_forest_clf = RandomForestClassifier(bootstrap = True, oob_score = False, warm_start = True, random_state = 100)
     for n in ns:
-        rnd_forest_clf = RandomForestClassifier(n_estimators = n, bootstrap = True, oob_score = True, warm_start = True, random_state = 100)
-    '''
+        rnd_forest_clf.set_params(**{'n_estimators': n})
+        auc_scores, error_scores, bias, var = clf_bias_var(rnd_forest_clf, X, y, n_replicas)
+        print('auc mean: {}, std: {}'.format(np.mean(auc_scores), np.std(auc_scores)))
+        print('error mean: {}, std: {}'.format(np.mean(error_scores), np.std(error_scores)))
+        print('bias: {}, var: {}'.format(bias, var))
+        biases_vars.append([bias, var])
+    
+    biases_vars = np.array(biases_vars)
+    
+    #ax.plot(ns, biases_vars[:, 0], label = 'Random forest bias')
+    ax.plot(ns, biases_vars[:, 1], label = 'Random forest variance')
+    
+    ax.legend(loc = 'best', fontsize = 'medium')
+    
     plt.show()
