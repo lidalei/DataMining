@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pylab as plt
 from sklearn.datasets import make_moons
-from sklearn.tree import DecisionTreeClassifier, ExtraTreeClassifier
-from sklearn.ensemble import BaggingClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 
 def plot_surface(ax, clf, X, y):
@@ -24,13 +23,17 @@ if __name__ == '__main__':
     X, y = make_moons(n_samples = 200, random_state = 100)
     
     ns = np.logspace(0, 7, 8, endpoint = True, base = 2.0, dtype = np.int32)
+        
     fig, axes = plt.subplots(2, ns.size / 2)
+    fig.suptitle('Decision boundaries for Random Forests with different number of trees', fontsize = 'large')
     axes = np.reshape(axes, ns.size)
     
     for n, ax in zip(ns, axes):
-        ensemble_clf = BaggingClassifier(ExtraTreeClassifier(), n_estimators = n)
+        ensemble_clf = RandomForestClassifier(n_estimators = n)
         ensemble_clf.fit(X, y)
         
+        ax.set_title('n_estimators = {}'.format(n))
         plot_surface(ax, ensemble_clf, X, y)
     
+    plt.tight_layout()
     plt.show()
