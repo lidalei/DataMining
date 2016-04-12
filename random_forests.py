@@ -1,4 +1,4 @@
-import os, time, json
+import os
 from openml.apiconnector import APIConnector
 from scipy.io.arff import loadarff
 import numpy as np
@@ -83,30 +83,30 @@ if __name__ == '__main__':
     ## get dataset
     X, y, attribute_names, target_attribute_names = get_dataset(44)
     
-    ns = np.logspace(0, 7, 8, endpoint = True, base = 2.0, dtype = np.int32)
+    ns = np.logspace(0, 7, num = 8, endpoint = True, base = 2.0, dtype = np.int32)
     fig, (ax1, ax2) = plt.subplots(1, 2)
     ## OOB scores
-    oob_scores = []
+    oob_err_rates = []
     for n in ns:
         rnd_forest_clf = RandomForestClassifier(n_estimators = n, bootstrap = True, oob_score = True, warm_start = True, random_state = 100)
         rnd_forest_clf.fit(X, y)
-        oob_scores.append(1.0 - rnd_forest_clf.oob_score_)
+        oob_err_rates.append(1.0 - rnd_forest_clf.oob_score_)
         # plot_surface(ax, rnd_forest_clf, X, y)
-    ax1.plot(ns, oob_scores, label = 'OOB error')
+    ax1.plot(ns, oob_err_rates, label = 'OOB error')
     
     ax1.legend(loc = 'best', fontsize = 'medium')
     ax1.set_xlabel('Number of base classifiers')
     
     ## cross validation scores
-    cv_scores = []
+    cv_err_rates = []
     for n in ns:
-        rnd_forest_clf = RandomForestClassifier(n_estimators = n, bootstrap = False, oob_score = False, warm_start = True, random_state = 100)
+        rnd_forest_clf = RandomForestClassifier(n_estimators = n, bootstrap = True, oob_score = False, warm_start = True, random_state = 100)
         scores = cross_val_score(rnd_forest_clf, X, y, cv = 10, n_jobs = -1)
-        cv_scores.append([1.0 - np.mean(scores), np.std(scores)])
+        cv_err_rates.append([1.0 - np.mean(scores), np.std(scores)])
         # plot_surface(ax, rnd_forest_clf, X, y)
-    cv_scores = np.array(cv_scores)
-    ax2.plot(ns, cv_scores[:, 0], label = 'cv error mean')
-    ax2.plot(ns, cv_scores[:, 1], label = 'cv error std')
+    cv_err_rates = np.array(cv_err_rates)
+    ax2.plot(ns, cv_err_rates[:, 0], label = 'CV error mean')
+    ax2.plot(ns, cv_err_rates[:, 1], label = 'CV error std')
     
     ax2.legend(loc = 'best', fontsize = 'medium')
     ax2.set_xlabel('Number of base classifiers')
