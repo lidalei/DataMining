@@ -18,6 +18,7 @@ from openml.apiconnector import APIConnector
 from scipy.io.arff import loadarff
 import numpy as np
 import matplotlib.pylab as plt
+from SGDDataset import SGDDataSet
 
 def get_dataset(did):
     home_dir = os.path.expanduser("~")
@@ -51,7 +52,9 @@ if __name__ == '__main__':
     ## 60,000 as training data, 10,000 as test data
     X_train, X_test = X[:60000], X[60000:]
     y_train, y_test = vec_y[:60000], vec_y[60000:]
-        
+    
+    train_data = SGDDataSet(X_train, y_train, dtype = tf.float32)
+    
     BATCH_SIZE = 1000
     
     '''
@@ -86,8 +89,7 @@ if __name__ == '__main__':
     sess.run(init)
     
     for i in range(1000):        
-        batch_indices = np.random.randint(X_train.shape[0], size = BATCH_SIZE, dtype = np.int32)
-        batch_xs, batch_ys = X_train[batch_indices], y_train[batch_indices]
+        batch_xs, batch_ys = train_data.next_batch(BATCH_SIZE)
         sess.run(train_step, feed_dict={x: batch_xs, y_true: batch_ys})
      
     '''

@@ -18,7 +18,7 @@ from openml.apiconnector import APIConnector
 from scipy.io.arff import loadarff
 import numpy as np
 import matplotlib.pylab as plt
-
+from SGDDataset import SGDDataSet
 
 # The MNIST dataset has 10 classes, representing the digits 0 through 9.
 NUM_CLASSES = 10
@@ -35,7 +35,6 @@ flags.DEFINE_integer('max_steps', 2000, 'Number of steps to run trainer.')
 flags.DEFINE_integer('hidden1', 50, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('batch_size', 600, 'Batch size. Must divide evenly into the dataset sizes.')
 flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
-flags.DEFINE_boolean('fake_data', False, 'If true, uses fake data for unit testing.')
 
 def get_dataset(did):
     home_dir = os.path.expanduser("~")
@@ -69,6 +68,11 @@ def inference(images, hidden1_units):
     """
     # Hidden 1
     with tf.name_scope('hidden1'):
+        '''
+        A Variable is a modifiable tensor that lives in TensorFlow's graph of interacting operations.
+        It can be used and even modified by the computation. For machine learning applications,
+        one generally has the model parameters be Variables.
+        '''  
         weights = tf.Variable(
             tf.truncated_normal([IMAGE_PIXELS, hidden1_units], stddev=1.0 / np.sqrt(float(IMAGE_PIXELS))), name='weights')
         biases = tf.Variable(tf.zeros([hidden1_units]), name='biases')
@@ -135,8 +139,7 @@ def evaluation(logits, labels):
       labels: Labels tensor, int32 - [batch_size], with values in the range [0, NUM_CLASSES).
     
     Returns:
-      A scalar int32 tensor with the number of examples (out of batch_size)
-      that were predicted correctly.
+      A scalar float32 tensor with the rate of examples (out of batch_size) that were predicted correctly.
     """
     # For a classifier model, we can use the in_top_k Op.
     # It returns a bool tensor with shape [batch_size] that is true for
@@ -144,7 +147,7 @@ def evaluation(logits, labels):
     # of all logits for that example.
     correct = tf.nn.in_top_k(logits, labels, 1)
     # Return the number of true entries.
-    return tf.reduce_sum(tf.cast(correct, tf.int32))
+    return tf.reduce_mean(tf.cast(correct, tf.float32))
 
 
 if __name__ == '__main__':
@@ -160,6 +163,10 @@ if __name__ == '__main__':
     ## 60,000 as training data, 10,000 as test data
     X_train, X_test = X[:60000], X[60000:]
     y_train, y_test = y[:60000], y[60000:]
+    
+    train_data = SGDDataSet(X_train, y_train, dtype = tf.float32)
+    
+    it_counts, loss_values, train_scores, test_scores = [], [], [], []
     
     # Tell TensorFlow that the model will be built into the default Graph.
     with tf.Graph().as_default():
@@ -192,8 +199,10 @@ if __name__ == '__main__':
         
         for step in range(FLAGS.max_steps):
             start_time = time.time()
-            batch_indices = np.random.randint(X_train.shape[0], size = FLAGS.batch_size, dtype = np.int32)
-            batch_xs, batch_ys = X_train[batch_indices], y_train[batch_indices]
+            # batch_indices = np.random.randint(X_train.shape[0], size = FLAGS.batch_size, dtype = np.int32)
+            # batch_xs, batch_ys = X_train[batch_indices], y_train[batch_indices]
+            batch_xs, batch_ys = train_data.next_batch(FLAGS.batch_size)
+            
             feed_dict = {images_placeholder: batch_xs, labels_placeholder: batch_ys}
             _, loss_value  = sess.run([train_op, loss], feed_dict = feed_dict)
             duration = time.time() - start_time
@@ -206,19 +215,46 @@ if __name__ == '__main__':
                 summary_str = sess.run(summary_op, feed_dict = feed_dict)
                 summary_writer.add_summary(summary_str, step)
                 summary_writer.flush()
-            
-            # Save a checkpoint and evaluate the model periodically.
-            if (step + 1) % 1000 == 0 or (step + 1) == FLAGS.max_steps:
-                saver.save(sess, FLAGS.train_dir, global_step=step)
-                # Evaluate against the training set.
-                print('Training Data Eval:') 
-                print(sess.run(eval_correct, feed_dict={images_placeholder: X_train, labels_placeholder: y_train}))
-                # Evaluate against the test set.
-                print('Test Data Eval:')
-                print(sess.run(eval_correct, feed_dict={images_placeholder: X_test, labels_placeholder: y_test}))
-    
-    '''
-    A Variable is a modifiable tensor that lives in TensorFlow's graph of interacting operations.
-    It can be used and even modified by the computation. For machine learning applications,
-    one generally has the model parameters be Variables.
-    '''  
+                
+                it_counts.append(step)
+                loss_values.append(float(loss_value)) # to json serializable
+                
+                train_score = sess.run(eval_correct, feed_dict={images_placeholder: X_train, labels_placeholder: y_train})
+                train_scores.append(float(train_score))
+                
+                test_score = sess.run(eval_correct, feed_dict={images_placeholder: X_test, labels_placeholder: y_test})
+                
+                test_scores.append(float(test_score))
+                
+                # Save a checkpoint and evaluate the model periodically.
+                if (step + 1) % 1000 == 0 or (step + 1) == FLAGS.max_steps:
+                    saver.save(sess, FLAGS.train_dir, global_step=step)
+                    # Evaluate against the training set.
+                    print('Training Data Eval: {}'.format(train_score)) 
+                    # Evaluate against the test set.
+                    print('Test Data Eval: {}'.format(test_score))
+
+## save train process, iterative counts and corresponding train error, test error and loss
+train_process = {
+                 'it_counts': it_counts,
+                 'loss_values': loss_values,
+                 'train_scores': train_scores,
+                 'test_scores': test_scores
+                 }
+with open('train_process.json', 'w+') as f:
+    json.dump(train_process, f)
+f.close()
+
+## visualise the train process
+fig, (ax1, ax2) = plt.subplots(1, 2)
+fig.suptitle('Visualizing Learning', fontsize = 'large')
+
+ax1.plot(it_counts, loss_values, '-o', label = 'Loss')
+ax1.legend(loc = 'best', fontsize = 'medium')
+
+ax2.plot(it_counts, train_scores, '-o', label = 'Training accuracy')
+ax2.plot(it_counts, test_scores, '-o', label = 'Test accuracy')
+ax2.legend(loc = 'best', fontsize = 'medium')
+
+plt.tight_layout()
+plt.show()
