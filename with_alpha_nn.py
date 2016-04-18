@@ -31,6 +31,7 @@ IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.001, 'Initial learning rate.')
+flags.DEFINE_float('alpha', 0.001, 'l2 penalty rate.')
 flags.DEFINE_integer('max_steps', 1000000, 'Number of steps to run trainer.')
 flags.DEFINE_integer('hidden1', 50, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('batch_size', 600, 'Batch size. Must divide evenly into the dataset sizes.')
@@ -77,28 +78,34 @@ def inference(images, hidden1_units):
             tf.truncated_normal([IMAGE_PIXELS, hidden1_units], stddev=1.0 / np.sqrt(float(IMAGE_PIXELS))), name='weights')
         biases = tf.Variable(tf.zeros([hidden1_units]), name='biases')
         hidden1 = tf.nn.relu(tf.matmul(images, weights) + biases)
+        # add weights penalty
+        l2_penalty_hidden1 =  FLAGS.alpha * tf.reduce_sum(tf.square(weights))
+        
     # Linear
     with tf.name_scope('softmax_linear'):
         weights = tf.Variable(
             tf.truncated_normal([hidden1_units, NUM_CLASSES], stddev=1.0 / np.sqrt(float(hidden1_units))), name='weights')
         biases = tf.Variable(tf.zeros([NUM_CLASSES]), name='biases')
         logits = tf.matmul(hidden1, weights) + biases
+        # add weights penalty
+        l2_penalty_softmax =  FLAGS.alpha * tf.reduce_sum(tf.square(weights))
         
-        return logits
+        
+        return logits, (l2_penalty_hidden1 + l2_penalty_softmax)
 
 
-def loss(logits, labels):
+def loss(logits, labels, l2_penalty):
     """Calculates the loss from the logits and the labels.    
     Args:
       logits: Logits tensor, float - [batch_size, NUM_CLASSES].
       labels: Labels tensor, int32 - [batch_size].
-    
+      l2_penalty
     Returns:
       loss: Loss tensor of type float.
     """
     labels = tf.to_int64(labels)
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels, name = 'xentropy')
-    loss = tf.reduce_mean(cross_entropy, name = 'xentropy_mean')
+    loss = tf.reduce_mean(cross_entropy, name = 'xentropy_mean') + l2_penalty
     return loss
     
 
@@ -177,9 +184,9 @@ if __name__ == '__main__':
         images_placeholder = tf.placeholder(tf.float32, shape = (None, IMAGE_PIXELS))
         labels_placeholder = tf.placeholder(tf.int32, shape = (None))
         # Build a Graph that computes predictions from the inference model.
-        logits = inference(images_placeholder, FLAGS.hidden1)
+        logits, l2_penalty = inference(images_placeholder, FLAGS.hidden1)
         # Add to the Graph the Ops for loss calculation.
-        loss = loss(logits, labels_placeholder)
+        loss = loss(logits, labels_placeholder, l2_penalty)
         # Add to the Graph the Ops that calculate and apply gradients.
         train_op = training(loss, FLAGS.learning_rate)
         # Add the Op to compare the logits to the labels during evaluation.
@@ -242,6 +249,6 @@ train_process = {
                  'train_scores': train_scores,
                  'test_scores': test_scores
                  }
-with open('train_process.json', 'w+') as f:
+with open('train_process_with_alpha_alpha_0.001.json', 'w+') as f:
     json.dump(train_process, f)
 f.close()

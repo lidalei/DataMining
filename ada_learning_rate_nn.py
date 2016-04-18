@@ -30,9 +30,10 @@ IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE
 # Basic model parameters as external flags.
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_float('learning_rate', 0.001, 'Initial learning rate.')
-flags.DEFINE_integer('max_steps', 1000000, 'Number of steps to run trainer.')
 flags.DEFINE_integer('hidden1', 50, 'Number of units in hidden layer 1.')
+flags.DEFINE_float('learning_rate', 0.001, 'Initial learning rate.')
+flags.DEFINE_integer('max_steps', 20000, 'Number of steps to run trainer.')
+flags.DEFINE_integer('train_size', 60000, 'Number of steps to run trainer.')
 flags.DEFINE_integer('batch_size', 600, 'Batch size. Must divide evenly into the dataset sizes.')
 flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
 
@@ -161,8 +162,8 @@ if __name__ == '__main__':
         vec_y_i[y_i] = 1
     '''
     ## 60,000 as training data, 10,000 as test data
-    X_train, X_test = X[:60000], X[60000:]
-    y_train, y_test = y[:60000], y[60000:]
+    X_train, X_test = X[:FLAGS.train_size], X[FLAGS.train_size:]
+    y_train, y_test = y[:FLAGS.train_size], y[FLAGS.train_size:]
     
     train_data = SGDDataSet(X_train, y_train, dtype = tf.float32)
     
@@ -176,12 +177,13 @@ if __name__ == '__main__':
         '''
         images_placeholder = tf.placeholder(tf.float32, shape = (None, IMAGE_PIXELS))
         labels_placeholder = tf.placeholder(tf.int32, shape = (None))
+        learning_rate_placeholder = tf.placeholder(tf.float32, shape = [], name = 'learning_rate')
         # Build a Graph that computes predictions from the inference model.
         logits = inference(images_placeholder, FLAGS.hidden1)
         # Add to the Graph the Ops for loss calculation.
         loss = loss(logits, labels_placeholder)
         # Add to the Graph the Ops that calculate and apply gradients.
-        train_op = training(loss, FLAGS.learning_rate)
+        train_op = training(loss, learning_rate_placeholder)
         # Add the Op to compare the logits to the labels during evaluation.
         eval_correct = evaluation(logits, labels_placeholder)
         # Build the summary operation based on the TF collection of Summaries.
@@ -200,8 +202,9 @@ if __name__ == '__main__':
         for step in range(FLAGS.max_steps):
             # start_time = time.time()
             batch_xs, batch_ys = train_data.next_batch(FLAGS.batch_size)
+            ada_learning_rate = 1.0 / np.sqrt(10000.0 + step * FLAGS.batch_size / FLAGS.train_size)
             
-            feed_dict = {images_placeholder: batch_xs, labels_placeholder: batch_ys}
+            feed_dict = {images_placeholder: batch_xs, labels_placeholder: batch_ys, learning_rate_placeholder: ada_learning_rate}
             _, loss_value  = sess.run([train_op, loss], feed_dict = feed_dict)
             # duration = time.time() - start_time
             
@@ -242,6 +245,20 @@ train_process = {
                  'train_scores': train_scores,
                  'test_scores': test_scores
                  }
-with open('train_process.json', 'w+') as f:
+with open('train_process_ada_learning_rate.json', 'w+') as f:
     json.dump(train_process, f)
 f.close()
+
+## visualise the train process
+fig, (ax1, ax2) = plt.subplots(1, 2)
+fig.suptitle('Visualizing Learning', fontsize = 'large')
+
+ax1.plot(it_counts, loss_values, '-o', label = 'Loss')
+ax1.legend(loc = 'best', fontsize = 'medium')
+
+ax2.plot(it_counts, train_scores, '-o', label = 'Training accuracy')
+ax2.plot(it_counts, test_scores, '-o', label = 'Test accuracy')
+ax2.legend(loc = 'best', fontsize = 'medium')
+
+plt.tight_layout()
+plt.show()

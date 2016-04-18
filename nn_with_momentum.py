@@ -31,6 +31,7 @@ IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.001, 'Initial learning rate.')
+flags.DEFINE_float('momentum', 0.9, 'Momentum')
 flags.DEFINE_integer('max_steps', 1000000, 'Number of steps to run trainer.')
 flags.DEFINE_integer('hidden1', 50, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('batch_size', 600, 'Batch size. Must divide evenly into the dataset sizes.')
@@ -102,7 +103,7 @@ def loss(logits, labels):
     return loss
     
 
-def training(loss, learning_rate):
+def training(loss, learning_rate, momentum):
     """Sets up the training Ops.
     
     Creates a summarizer to track the loss over time in TensorBoard.
@@ -122,7 +123,7 @@ def training(loss, learning_rate):
     # Add a scalar summary for the snapshot loss.
     tf.scalar_summary(loss.op.name, loss)
     # Create the gradient descent optimizer with the given learning rate.
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+    optimizer = tf.train.MomentumOptimizer(learning_rate, momentum = momentum)
     # Create a variable to track the global step.
     global_step = tf.Variable(0, name = 'global_step', trainable = False)
     # Use the optimizer to apply the gradients that minimize the loss
@@ -181,7 +182,7 @@ if __name__ == '__main__':
         # Add to the Graph the Ops for loss calculation.
         loss = loss(logits, labels_placeholder)
         # Add to the Graph the Ops that calculate and apply gradients.
-        train_op = training(loss, FLAGS.learning_rate)
+        train_op = training(loss, FLAGS.learning_rate, FLAGS.momentum)
         # Add the Op to compare the logits to the labels during evaluation.
         eval_correct = evaluation(logits, labels_placeholder)
         # Build the summary operation based on the TF collection of Summaries.
@@ -242,6 +243,6 @@ train_process = {
                  'train_scores': train_scores,
                  'test_scores': test_scores
                  }
-with open('train_process.json', 'w+') as f:
+with open('train_process_momentum.json', 'w+') as f:
     json.dump(train_process, f)
 f.close()
