@@ -17,7 +17,6 @@ import os, time, json
 from openml.apiconnector import APIConnector
 from scipy.io.arff import loadarff
 import numpy as np
-import matplotlib.pylab as plt
 from SGDDataset import SGDDataSet
 
 # The MNIST dataset has 10 classes, representing the digits 0 through 9.
@@ -31,7 +30,7 @@ IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.001, 'Initial learning rate.')
-flags.DEFINE_integer('max_steps', 1000000, 'Number of steps to run trainer.')
+flags.DEFINE_integer('max_steps', 100000, 'Number of steps to run trainer.')
 flags.DEFINE_integer('hidden1', 50, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('batch_size', 600, 'Batch size. Must divide evenly into the dataset sizes.')
 flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
@@ -150,22 +149,7 @@ def evaluation(logits, labels):
     return tf.reduce_mean(tf.cast(correct, tf.float32))
 
 
-if __name__ == '__main__':
-    ## get dataset - MNIST
-    X, y, attribute_names, target_attribute_names = get_dataset(554)
-    
-    '''
-    # vectorize y
-    vec_y = np.zeros((y.shape[0], 10), dtype = np.int32)
-    for vec_y_i, y_i in zip(vec_y, y):
-        vec_y_i[y_i] = 1
-    '''
-    ## 60,000 as training data, 10,000 as test data
-    X_train, X_test = X[:60000], X[60000:]
-    y_train, y_test = y[:60000], y[60000:]
-    
-    train_data = SGDDataSet(X_train, y_train, dtype = tf.float32)
-    
+def run(X_train, y_train, train_data, X_test, y_test):
     it_counts, loss_values, train_scores, test_scores = [], [], [], []
     
     # Tell TensorFlow that the model will be built into the default Graph.
@@ -179,9 +163,9 @@ if __name__ == '__main__':
         # Build a Graph that computes predictions from the inference model.
         logits = inference(images_placeholder, FLAGS.hidden1)
         # Add to the Graph the Ops for loss calculation.
-        loss = loss(logits, labels_placeholder)
+        loss_op = loss(logits, labels_placeholder)
         # Add to the Graph the Ops that calculate and apply gradients.
-        train_op = training(loss, FLAGS.learning_rate)
+        train_op = training(loss_op, FLAGS.learning_rate)
         # Add the Op to compare the logits to the labels during evaluation.
         eval_correct = evaluation(logits, labels_placeholder)
         # Build the summary operation based on the TF collection of Summaries.
@@ -198,18 +182,18 @@ if __name__ == '__main__':
         summary_writer = tf.train.SummaryWriter(FLAGS.train_dir, sess.graph)
         
         for step in range(FLAGS.max_steps):
-            # start_time = time.time()
+            start_time = time.time()
             batch_xs, batch_ys = train_data.next_batch(FLAGS.batch_size)
             
             feed_dict = {images_placeholder: batch_xs, labels_placeholder: batch_ys}
-            _, loss_value  = sess.run([train_op, loss], feed_dict = feed_dict)
-            # duration = time.time() - start_time
+            _, loss_value  = sess.run([train_op, loss_op], feed_dict = feed_dict)
+            duration = time.time() - start_time
             
             # Write the summaries and print an overview fairly often.
             if step % 100 == 0:
-                '''
                 # Print status to stdout.
                 print('Step %d: loss = %.2f (%.3f sec)' % (step, loss_value, duration))
+                '''
                 # Update the events file.
                 summary_str = sess.run(summary_op, feed_dict = feed_dict)
                 summary_writer.add_summary(summary_str, step)
@@ -225,23 +209,44 @@ if __name__ == '__main__':
                 test_score = sess.run(eval_correct, feed_dict={images_placeholder: X_test, labels_placeholder: y_test})
                 
                 test_scores.append(float(test_score))
-                '''
-                # Save a checkpoint and evaluate the model periodically.
-                if (step + 1) % 1000 == 0 or (step + 1) == FLAGS.max_steps:
-                    saver.save(sess, FLAGS.train_dir, global_step=step)
-                    # Evaluate against the training set.
-                    print('Training Data Eval: {}'.format(train_score)) 
-                    # Evaluate against the test set.
-                    print('Test Data Eval: {}'.format(test_score))
-                '''
-                
-## save train process, iterative counts and corresponding train error, test error and loss
-train_process = {
-                 'it_counts': it_counts,
-                 'loss_values': loss_values,
-                 'train_scores': train_scores,
-                 'test_scores': test_scores
-                 }
-with open('train_process.json', 'w+') as f:
-    json.dump(train_process, f)
-f.close()
+
+            # Save a checkpoint and evaluate the model periodically.
+            if (step + 1) == FLAGS.max_steps:
+                saver.save(sess, FLAGS.train_dir, global_step=step)
+                # Evaluate against the training set.
+                print('Training Data Eval: {}'.format(train_score)) 
+                # Evaluate against the test set.
+                print('Test Data Eval: {}'.format(test_score))
+        
+        return it_counts, loss_values, train_scores, test_scores
+
+
+if __name__ == '__main__':
+    ## get dataset - MNIST
+    X, y, attribute_names, target_attribute_names = get_dataset(554)
+    
+    '''
+    # vectorize y
+    vec_y = np.zeros((y.shape[0], 10), dtype = np.int32)
+    for vec_y_i, y_i in zip(vec_y, y):
+        vec_y_i[y_i] = 1
+    '''
+    ## 60,000 as training data, 10,000 as test data
+    X_train, X_test = X[:60000], X[60000:]
+    y_train, y_test = y[:60000], y[60000:]
+    
+    train_data = SGDDataSet(X_train, y_train, dtype = tf.float32)
+    
+    for learning_rate in [0.0001, 0.001, 0.01, 0.1]:
+        FLAGS.learning_rate = learning_rate
+        it_counts, loss_values, train_scores, test_scores = run(X_train, y_train, train_data, X_test, y_test)
+        ## save train process, iterative counts and corresponding train error, test error and loss
+        train_process = {
+                         'it_counts': it_counts,
+                         'loss_values': loss_values,
+                         'train_scores': train_scores,
+                         'test_scores': test_scores
+                         }
+        with open('train_process_learning_rate_' + learning_rate + '.json', 'w+') as f:
+            json.dump(train_process, f)
+        f.close()
