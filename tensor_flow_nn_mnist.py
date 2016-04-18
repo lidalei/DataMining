@@ -247,6 +247,6 @@ if __name__ == '__main__':
                          'train_scores': train_scores,
                          'test_scores': test_scores
                          }
-        with open('train_process_learning_rate_' + learning_rate + '.json', 'w+') as f:
+        with open('train_process_learning_rate_' + str(learning_rate) + '.json', 'w+') as f:
             json.dump(train_process, f)
         f.close()

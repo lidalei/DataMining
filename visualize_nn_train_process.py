@@ -4,7 +4,7 @@ import json
 fig, ax2 = plt.subplots(1, 1)
 
 for learning_rate in [0.0001, 0.001, 0.01, 0.1]:
-    with open('train_process_learning_rate_' + learning_rate + '.json', 'r') as f:
+    with open('train_process_learning_rate_' + str(learning_rate) + '.json', 'r') as f:
         train_process = json.load(f)
     f.close()
 
