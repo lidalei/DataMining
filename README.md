@@ -1,7 +1,8 @@
 # DataMining
 In this repository, various data mining algorithms are implemented while following the Course, Foundations of Data Mining at Eindhoven University of Technology (TU/e). Besides, hyper-parameter tuning techniques are experimented. The algorithms are as follows.
+# Files and descriptions.
 |File | Algorithm|
-| ----- |-------------|
+|-----|-------------|
 |MPNN.py | Multiple processing nearest-neighbor based on Cosine similarity.|
 |MTNN.py | Multiple threads nearest-neighbor based on Cosine similarity.|\
 |NN.py | Nearest-neighbor based on Cosine similarity.|
